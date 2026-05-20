@@ -1,89 +1,77 @@
-# National Examination Templates Repository
+# NE Templates - TVET Exam Templates
 
-This repository contains ready-to-use templates for Rwanda National Examinations practical exams.
+Ready-to-use templates for Rwanda National Examinations practical exams.
 
-## 📁 Structure
+## Templates
 
-- **`restful/`** - ✅ **COMPLETE** - RESTful API & Full Stack Development (NestJS + Next.js + PostgreSQL)
-- **`dsa/`** - Data Structures & Algorithms templates (Coming soon)
-- **`java/`** - Java programming templates (Coming soon)
-- **`mobile/`** - Mobile development templates (Coming soon)
-- **`intelligent_robotics/`** - Intelligent Robotics templates (Coming soon)
+### ✅ RESTful API & Web App (`restful/`)
 
-## 🎯 Purpose
+**Stack**: NestJS + Next.js + PostgreSQL + JWT + Swagger  
+**Features**: Auth, CRUD, Pagination, Role-based access, Swagger docs  
+**Status**: Production-ready
 
-These templates are designed to help you:
+### 🤖 Intelligent Robotics (`intelligent_robotics/`)
 
-- Quickly set up project structures during exams
-- Follow best practices and requirements
-- Maximize your marks with complete implementations
-- Work offline without internet access
+**Includes**: Face recognition (ArcFace)  
+**Status**: Template available
 
-## 🚀 Quick Start
+### 🚧 Coming Soon
 
-### RESTful API & Web App Template (Ready to Use!)
+- `dsa/` - Data Structures & Algorithms
+- `java/` - Java programming
+- `mobile/` - Mobile development
 
-The **restful/** folder contains a complete, production-ready template for TVET practical exams:
+## Quick Start
 
-**Tech Stack:**
-
-- Backend: NestJS + TypeScript + Prisma ORM
-- Frontend: Next.js 14 (App Router) + TypeScript + TailwindCSS
-- Database: PostgreSQL
-- Authentication: JWT with role-based access control
-- Documentation: Full Swagger/OpenAPI
-
-**Features:**
-
-- ✅ Complete authentication system (signup, login, JWT)
-- ✅ Role-based access control (ADMIN, ATTENDANT, USER)
-- ✅ Generic CRUD pattern with example (Items module)
-- ✅ Pagination with metadata
-- ✅ Input validation
-- ✅ API documentation (Swagger)
-- ✅ Security features (Helmet, CORS, rate limiting)
-- ✅ Responsive UI with TailwindCSS
-- ✅ Database migrations and seeding
-- ✅ Test structure ready
-
-**Get Started:**
+### RESTful Template
 
 ```bash
 cd restful
-# Follow the QUICK_START.md or SETUP_GUIDE.md
+
+# Backend
+cd backend
+npm install
+cp .env.example .env          # Edit DATABASE_URL
+npm run prisma:migrate
+npm run prisma:seed
+npm run start:dev             # → http://localhost:3001
+
+# Frontend (new terminal)
+cd frontend
+npm install
+cp .env.local.example .env.local
+npm run dev                   # → http://localhost:3000
 ```
 
-**Documentation:**
+**Login**: `admin@example.com` / `Admin123!`  
+**Swagger**: http://localhost:3001/api/docs
 
-- [Quick Start Guide](./restful/QUICK_START.md) - Get running in 5 minutes
-- [Complete Setup Guide](./restful/SETUP_GUIDE.md) - Detailed installation
-- [Exam Adaptation Guide](./restful/EXAM_ADAPTATION_GUIDE.md) - How to adapt for your exam
-- [Features Documentation](./restful/FEATURES.md) - All available features
+See [restful/README.md](./restful/README.md) for full guide.
 
-### Other Templates
+### Intelligent Robotics
 
-Navigate to the specific folder for detailed instructions and templates (coming soon).
+```bash
+cd intelligent_robotics/face_recognition_arcface
+# Follow README.md in that folder
+```
 
-## 📝 Usage
+## Usage Pattern
 
-Each folder contains:
+1. **Copy template** to your exam workspace
+2. **Read requirements** → Identify entities
+3. **Update database schema** → Add models
+4. **Copy CRUD modules** → Adapt for entities
+5. **Test** → Swagger + Browser
+6. **Submit**
 
-- Complete project templates
-- Step-by-step implementation guides
-- Code snippets and examples
-- Database schemas
-- API documentation templates
-- Best practices and tips
+## Exam Tips
 
-## ⚠️ Exam Tips
+- Plan database schema first
+- Copy `items/` module for new entities
+- Test each feature in Swagger
+- Use provided auth system
+- Keep code clean and organized
 
-1. Read the requirements carefully
-2. Plan your database schema first
-3. Follow the template structure
-4. Test each feature as you implement
-5. Document your APIs properly
-6. Handle errors and validation
-7. Ensure responsive design
-8. Use pagination for lists
-9. Implement proper security (CORS, JWT, etc.)
-10. Keep your code clean and organized
+---
+
+**Each template folder contains detailed setup and usage instructions.**

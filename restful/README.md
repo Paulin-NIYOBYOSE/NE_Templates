@@ -1,40 +1,44 @@
-# RESTful API & Web App Template for TVET Exams
+# RESTful API & Web App Template
 
-Production-ready full-stack template: NestJS + Next.js + PostgreSQL + JWT + Swagger
+Full-stack template for TVET exams: NestJS + Next.js + PostgreSQL + JWT + Swagger
 
 ## Stack
 
-- **Backend**: NestJS + Prisma ORM + PostgreSQL
-- **Frontend**: Next.js 14 (App Router) + TailwindCSS
-- **Auth**: JWT + Role-based access (ADMIN, ATTENDANT, USER)
-- **Docs**: Swagger at `/api/docs`
+**Backend**: NestJS + Prisma + PostgreSQL  
+**Frontend**: Next.js 14 + TailwindCSS  
+**Auth**: JWT + Roles (ADMIN, ATTENDANT, USER)  
+**Docs**: Swagger at `/api/docs`
 
-## Features
+## Setup
 
-✅ Auth (signup/login/JWT) ✅ CRUD pattern ✅ Pagination ✅ Validation ✅ Role guards ✅ Swagger docs
-
-## Quick Setup
+### 1. Database
 
 ```bash
-# 1. Database
 psql -U postgres -c "CREATE DATABASE tvet_exam_db;"
-
-# 2. Backend
-cd backend
-pnpm install
-cp .env.example .env  # Edit DATABASE_URL
-pnpm prisma migrate dev
-pnpm prisma db seed
-pnpm run start:dev    # → http://localhost:3001
-
-# 3. Frontend (new terminal)
-cd frontend
-pnpm install
-cp .env.local.example .env.local
-pnpm run dev          # → http://localhost:3000
 ```
 
-**Login**: `admin@example.com` / `Admin123!`
+### 2. Backend
+
+```bash
+cd backend
+npm install
+cp .env.example .env          # Edit DATABASE_URL
+npm run prisma:migrate
+npm run prisma:seed
+npm run start:dev             # → http://localhost:3001
+```
+
+### 3. Frontend
+
+```bash
+cd frontend
+npm install
+cp .env.local.example .env.local
+npm run dev                   # → http://localhost:3000
+```
+
+**Login**: `admin@example.com` / `Admin123!`  
+**Swagger**: http://localhost:3001/api/docs
 
 ## Project Structure
 
@@ -47,17 +51,18 @@ backend/src/
 └── prisma/        # Database service
 
 frontend/src/
-├── app/(auth)/           # Login/signup
-├── app/(protected)/
-│   └── items/            # ⭐ COPY THIS for new entities
-├── components/           # Navbar, Pagination
-├── lib/                  # API client, auth
-└── types/                # TypeScript types
+├── app/(auth)/              # Login/signup pages
+├── app/(protected)/items/   # ⭐ COPY THIS for new entities
+├── components/              # Reusable UI components
+├── lib/                     # API client, auth service
+└── types/                   # TypeScript types
 ```
 
-## Adding New Entity (e.g., Vehicle)
+## Add New Entity (Example: Vehicle)
 
-### 1. Database
+### Backend
+
+**1. Update schema**
 
 ```prisma
 // backend/prisma/schema.prisma
@@ -72,96 +77,148 @@ model Vehicle {
 }
 ```
 
+**2. Migrate**
+
 ```bash
-pnpm prisma migrate dev --name add-vehicle
+npm run prisma:migrate
 ```
 
-### 2. Backend
+**3. Create module**
 
 ```bash
-cd backend/src
+cd src
 cp -r items vehicles
 # Update: class names, Prisma model, routes, DTOs
-# Register in app.module.ts
+# Register VehiclesModule in app.module.ts
 ```
 
-### 3. Frontend
+### Frontend
+
+**1. Create pages**
 
 ```bash
-cd frontend/src/app/(protected)
+cd src/app/(protected)
 cp -r items vehicles
-# Update: API endpoints, types, forms
+# Update: API endpoints, types, forms, table columns
 ```
 
-### 4. Test
+**2. Add types**
+
+```typescript
+// src/types/vehicle.ts
+export interface Vehicle {
+  id: string;
+  plateNumber: string;
+  model: string;
+  ownerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+**3. Test**
 
 - Swagger: http://localhost:3001/api/docs
 - Browser: http://localhost:3000/vehicles
 
 ## Key Files
 
-**Backend:**
+**Backend**
 
-- Schema: `backend/prisma/schema.prisma`
-- CRUD template: `backend/src/items/`
-- Auth: `backend/src/auth/`
+- `prisma/schema.prisma` - Database models
+- `src/items/` - CRUD template (copy this)
+- `src/auth/` - Authentication logic
+- `src/common/guards/` - Role guards
 
-**Frontend:**
+**Frontend**
 
-- Pages template: `frontend/src/app/(protected)/items/`
-- API client: `frontend/src/lib/api.ts`
-- Types: `frontend/src/types/`
+- `app/(protected)/items/` - CRUD pages template (copy this)
+- `lib/api.ts` - API client
+- `types/` - TypeScript interfaces
+- `components/` - Reusable UI components
 
 ## Commands
 
 ```bash
 # Backend
-pnpm run start:dev        # Dev server
-pnpm prisma studio        # DB GUI
-pnpm prisma migrate dev   # New migration
-pnpm test                 # Tests
+npm run start:dev           # Dev server
+npm run prisma:studio       # DB GUI
+npm run prisma:migrate      # Run migrations
+npm run prisma:seed         # Seed database
+npm test                    # Run tests
 
 # Frontend
-pnpm run dev              # Dev server
-pnpm run build            # Production build
+npm run dev                 # Dev server
+npm run build               # Production build
+npm run lint                # Lint code
 ```
 
 ## Exam Workflow
 
-1. **Read requirements** → Identify entities
-2. **Update schema** → Add models to `schema.prisma`
-3. **Migrate** → `pnpm prisma migrate dev`
-4. **Copy Items module** → Rename for each entity
-5. **Test in Swagger** → Verify all endpoints
-6. **Copy Items pages** → Update forms/types
-7. **Test in browser** → Full CRUD flow
+1. **Read requirements** → List entities and relationships
+2. **Update schema** → Add models to `prisma/schema.prisma`
+3. **Migrate** → `npm run prisma:migrate`
+4. **Backend**: Copy `items/` → Rename for each entity → Register in `app.module.ts`
+5. **Test API** → Use Swagger to verify endpoints
+6. **Frontend**: Copy `items/` pages → Update forms/types
+7. **Test UI** → Full CRUD flow in browser
+8. **Polish** → Add validation, error handling
 
-## Swagger Auth
+## Swagger Usage
 
-1. POST `/auth/login` → Get `accessToken`
-2. Click "Authorize" → Enter `Bearer <token>`
-3. Test protected endpoints
+1. POST `/auth/login` → Copy `accessToken`
+2. Click "Authorize" button → Enter `Bearer <token>`
+3. Test all protected endpoints
+
+## Demo Accounts
+
+| Email                 | Password  | Role      |
+| --------------------- | --------- | --------- |
+| admin@example.com     | Admin123! | ADMIN     |
+| attendant@example.com | User123!  | ATTENDANT |
+| user@example.com      | User123!  | USER      |
 
 ## Troubleshooting
 
+**Database connection failed**
+
 ```bash
-# DB connection failed
-psql -U postgres -l
-
-# Port in use
-# Change PORT in backend/.env
-
-# Prisma errors
-pnpm prisma generate
-pnpm prisma migrate reset  # ⚠️ Deletes data
+psql -U postgres -l  # Check if DB exists
 ```
 
-## Demo Credentials
+**Port already in use**
 
-- Admin: `admin@example.com` / `Admin123!`
-- Attendant: `attendant@example.com` / `User123!`
-- User: `user@example.com` / `User123!`
+```bash
+# Change PORT in backend/.env
+```
+
+**Prisma errors**
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate reset  # ⚠️ Deletes all data
+```
+
+**bcrypt build errors**
+
+```bash
+# Use npm (not pnpm) - already configured
+rm -rf node_modules package-lock.json
+npm install
+```
+
+## Features
+
+✅ JWT authentication with refresh tokens  
+✅ Role-based access control (ADMIN, ATTENDANT, USER)  
+✅ Generic CRUD pattern with pagination  
+✅ Input validation (class-validator)  
+✅ Swagger API documentation  
+✅ Security (Helmet, CORS, rate limiting)  
+✅ Responsive UI with fixed sidebar/navbar  
+✅ Database migrations and seeding  
+✅ Error handling and filters
 
 ---
 
-**Docs**: Swagger at `/api/docs` | **Template**: Copy `items/` module | **Auth**: JWT in headers
+**Template Pattern**: Copy `items/` module → Adapt for your entities → Test in Swagger → Build UI

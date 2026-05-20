@@ -5,6 +5,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ItemsModule } from './items/items.module';
+import { UploadModule } from './upload/upload.module';
+import { EmailModule } from './email/email.module';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
@@ -21,6 +23,8 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     AuthModule,
     UsersModule,
     ItemsModule,
+    UploadModule,
+    EmailModule,
     // Add your exam-specific modules here
   ],
   providers: [

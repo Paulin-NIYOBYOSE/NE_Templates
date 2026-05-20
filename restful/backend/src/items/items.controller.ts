@@ -9,9 +9,18 @@ import {
   UseGuards,
   Query,
   Request,
+  Header,
+  Res,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { ItemsService } from './items.service';
+import { Response } from 'express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
+import { ItemsService, ItemFilters } from './items.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -33,19 +42,115 @@ export class ItemsController {
   @ApiOperation({ summary: 'Create a new item (Admin/Attendant only)' })
   @ApiResponse({ status: 201, description: 'Item successfully created' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  create(@Body() createItemDto: CreateItemDto, @Request() req: RequestWithUser) {
+  create(
+    @Body() createItemDto: CreateItemDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.itemsService.create(createItemDto, req.user.id);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all items with pagination' })
+  @ApiOperation({ summary: 'Get all items with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, example: 'name' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], example: 'asc' })
-  @ApiResponse({ status: 200, description: 'List of items with pagination metadata' })
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.itemsService.findAll(paginationDto);
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    example: 'name',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'asc',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search in name, description, category',
+  })
+  @ApiQuery({
+    name: 'category',
+    required: false,
+    type: String,
+    description: 'Filter by category',
+  })
+  @ApiQuery({
+    name: 'minPrice',
+    required: false,
+    type: Number,
+    description: 'Minimum price',
+  })
+  @ApiQuery({
+    name: 'maxPrice',
+    required: false,
+    type: Number,
+    description: 'Maximum price',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    type: Boolean,
+    description: 'Filter by active status',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Filter from date (ISO format)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    description: 'Filter to date (ISO format)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of items with pagination metadata',
+  })
+  findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
+    @Query('isActive') isActive?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const filters: ItemFilters = {};
+
+    if (search) filters.search = search;
+    if (category) filters.category = category;
+    if (minPrice) filters.minPrice = parseFloat(minPrice);
+    if (maxPrice) filters.maxPrice = parseFloat(maxPrice);
+    if (isActive !== undefined) filters.isActive = isActive === 'true';
+    if (startDate) filters.startDate = new Date(startDate);
+    if (endDate) filters.endDate = new Date(endDate);
+
+    return this.itemsService.findAll(paginationDto, filters);
+  }
+
+  @Get('statistics')
+  @Roles(UserRole.ADMIN, UserRole.ATTENDANT)
+  @ApiOperation({ summary: 'Get items statistics (Admin/Attendant only)' })
+  @ApiResponse({ status: 200, description: 'Statistics data' })
+  getStatistics() {
+    return this.itemsService.getStatistics();
+  }
+
+  @Get('export/csv')
+  @Roles(UserRole.ADMIN, UserRole.ATTENDANT)
+  @ApiOperation({ summary: 'Export items to CSV (Admin/Attendant only)' })
+  @Header('Content-Type', 'text/csv')
+  @Header('Content-Disposition', 'attachment; filename="items.csv"')
+  @ApiResponse({ status: 200, description: 'CSV file' })
+  async exportCSV(@Res() res: Response) {
+    const csv = await this.itemsService.exportToCSV();
+    res.send(csv);
   }
 
   @Get(':id')
@@ -67,10 +172,28 @@ export class ItemsController {
 
   @Delete(':id')
   @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Delete an item (Admin only)' })
+  @ApiOperation({ summary: 'Soft delete an item (Admin only)' })
   @ApiResponse({ status: 200, description: 'Item successfully deleted' })
   @ApiResponse({ status: 404, description: 'Item not found' })
   remove(@Param('id') id: string) {
     return this.itemsService.remove(id);
+  }
+
+  @Post(':id/restore')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Restore a soft-deleted item (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Item successfully restored' })
+  @ApiResponse({ status: 404, description: 'Item not found' })
+  restore(@Param('id') id: string) {
+    return this.itemsService.restore(id);
+  }
+
+  @Delete(':id/hard')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Permanently delete an item (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Item permanently deleted' })
+  @ApiResponse({ status: 404, description: 'Item not found' })
+  hardDelete(@Param('id') id: string) {
+    return this.itemsService.hardDelete(id);
   }
 }

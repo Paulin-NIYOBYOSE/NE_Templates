@@ -35,19 +35,40 @@ enum UserRole {
 
 // Example CRUD entity - use this as a template for your exam entities
 model Item {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   description String?
-  quantity    Int      @default(0)
-  price       Float    @default(0)
+  quantity    Int       @default(0)
+  price       Float     @default(0)
   category    String?
-  isActive    Boolean  @default(true)
+  isActive    Boolean   @default(true)
   createdById String
-  createdBy   User     @relation(fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  tags        ItemTag[] // Many-to-many relation
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Soft delete field
 
   @@map("items")
+}
+
+// Example: Many-to-many relationship (Tags)
+model Tag {
+  id    String    @id @default(uuid())
+  name  String    @unique
+  items ItemTag[]
+
+  @@map("tags")
+}
+
+model ItemTag {
+  itemId String
+  tagId  String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tagId])
+  @@map("item_tags")
 }
 
 // Add your exam-specific models below

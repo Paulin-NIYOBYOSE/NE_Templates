@@ -196,4 +196,22 @@ export class ItemsController {
   hardDelete(@Param('id') id: string) {
     return this.itemsService.hardDelete(id);
   }
+
+  @Post(':id/tags/:tagId')
+  @Roles(UserRole.ADMIN, UserRole.ATTENDANT)
+  @ApiOperation({ summary: 'Add a tag to an item (Admin/Attendant only)' })
+  @ApiResponse({ status: 201, description: 'Tag added to item' })
+  @ApiResponse({ status: 404, description: 'Item or tag not found' })
+  addTag(@Param('id') id: string, @Param('tagId') tagId: string) {
+    return this.itemsService.addTag(id, tagId);
+  }
+
+  @Delete(':id/tags/:tagId')
+  @Roles(UserRole.ADMIN, UserRole.ATTENDANT)
+  @ApiOperation({ summary: 'Remove a tag from an item (Admin/Attendant only)' })
+  @ApiResponse({ status: 200, description: 'Tag removed from item' })
+  @ApiResponse({ status: 404, description: 'Item not found' })
+  removeTag(@Param('id') id: string, @Param('tagId') tagId: string) {
+    return this.itemsService.removeTag(id, tagId);
+  }
 }

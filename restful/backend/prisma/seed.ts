@@ -155,13 +155,58 @@ async function main() {
     },
   ];
 
+  const createdItems = [];
   for (const item of items) {
-    await prisma.item.create({
+    const created = await prisma.item.create({
       data: item,
     });
+    createdItems.push(created);
   }
 
   console.log(`✅ Created ${items.length} demo items`);
+
+  // Create demo tags
+  const tagNames = ['new', 'sale', 'premium', 'bestseller', 'limited'];
+  const createdTags = [];
+  for (const name of tagNames) {
+    const tag = await prisma.tag.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+    createdTags.push(tag);
+  }
+
+  console.log(`✅ Created ${tagNames.length} demo tags`);
+
+  // Assign some tags to items
+  const tagAssignments = [
+    { itemIndex: 0, tagIndices: [0, 2] },       // Laptop: new, premium
+    { itemIndex: 1, tagIndices: [1] },           // Office Chair: sale
+    { itemIndex: 3, tagIndices: [0, 3] },        // Monitor: new, bestseller
+    { itemIndex: 6, tagIndices: [2, 3] },        // Headphones: premium, bestseller
+    { itemIndex: 10, tagIndices: [4] },          // Projector: limited
+  ];
+
+  for (const assignment of tagAssignments) {
+    for (const tagIndex of assignment.tagIndices) {
+      await prisma.itemTag.upsert({
+        where: {
+          itemId_tagId: {
+            itemId: createdItems[assignment.itemIndex].id,
+            tagId: createdTags[tagIndex].id,
+          },
+        },
+        update: {},
+        create: {
+          itemId: createdItems[assignment.itemIndex].id,
+          tagId: createdTags[tagIndex].id,
+        },
+      });
+    }
+  }
+
+  console.log('✅ Assigned tags to items');
 
   console.log('\n🎉 Seeding completed successfully!');
   console.log('\n📝 Demo Credentials:');

@@ -261,6 +261,35 @@ export class ItemsService {
     };
   }
 
+  // Add a tag to an item
+  async addTag(itemId: string, tagId: string) {
+    await this.findOne(itemId);
+
+    const tag = await this.prisma.tag.findUnique({ where: { id: tagId } });
+    if (!tag) {
+      throw new NotFoundException(`Tag with ID ${tagId} not found`);
+    }
+
+    await this.prisma.itemTag.upsert({
+      where: { itemId_tagId: { itemId, tagId } },
+      create: { itemId, tagId },
+      update: {},
+    });
+
+    return this.findOne(itemId);
+  }
+
+  // Remove a tag from an item
+  async removeTag(itemId: string, tagId: string) {
+    await this.findOne(itemId);
+
+    await this.prisma.itemTag.deleteMany({
+      where: { itemId, tagId },
+    });
+
+    return this.findOne(itemId);
+  }
+
   // Export to CSV
   async exportToCSV(): Promise<string> {
     const items = await this.prisma.item.findMany({

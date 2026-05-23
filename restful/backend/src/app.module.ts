@@ -7,6 +7,8 @@ import { UsersModule } from './users/users.module';
 import { ItemsModule } from './items/items.module';
 import { UploadModule } from './upload/upload.module';
 import { EmailModule } from './email/email.module';
+import { TagsModule } from './tags/tags.module';
+import { ReportsModule } from './reports/reports.module';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
@@ -17,14 +19,18 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
       {
         ttl: 60000, // 1 minute
         limit: 100, // 100 requests per minute
-      },
+      }, 
     ]),
     PrismaModule,
     AuthModule,
     UsersModule,
     ItemsModule,
     UploadModule,
+    
     EmailModule,
+    TagsModule,
+    ReportsModule,
+
     // Add your exam-specific modules here
   ],
   providers: [

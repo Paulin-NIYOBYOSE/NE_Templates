@@ -140,6 +140,22 @@ export default function ItemDetailPage() {
             </dd>
           </div>
 
+          {item.tags && item.tags.length > 0 && (
+            <div className="sm:col-span-2">
+              <dt className="text-sm font-medium text-gray-500">Tags</dt>
+              <dd className="mt-1 flex flex-wrap gap-2">
+                {item.tags.map((t) => (
+                  <span
+                    key={t.tag.id}
+                    className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full"
+                  >
+                    {t.tag.name}
+                  </span>
+                ))}
+              </dd>
+            </div>
+          )}
+
           <div>
             <dt className="text-sm font-medium text-gray-500">Created By</dt>
             <dd className="mt-1 text-sm text-gray-900">

@@ -1,3 +1,8 @@
+export interface Tag {
+  id: string;
+  name: string;
+}
+
 export interface Item {
   id: string;
   name: string;
@@ -13,6 +18,7 @@ export interface Item {
     firstName: string;
     lastName: string;
   };
+  tags?: { tag: Tag }[];
   createdAt: string;
   updatedAt: string;
 }

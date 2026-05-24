@@ -24,18 +24,12 @@ const navItems: NavItem[] = [
     href: "/items",
     icon: "📦",
   },
-  // Add more navigation items here for your exam scenario
-  // Example:
-  // {
-  //   name: 'Vehicles',
-  //   href: '/vehicles',
-  //   icon: '🚗',
-  // },
-  // {
-  //   name: 'Parking Lots',
-  //   href: '/parking-lots',
-  //   icon: '🅿️',
-  // },
+  {
+    name: "Reports",
+    href: "/reports",
+    icon: "�",
+    roles: [UserRole.ADMIN, UserRole.ATTENDANT],
+  },
   {
     name: "Users",
     href: "/users",

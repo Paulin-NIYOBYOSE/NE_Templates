@@ -1,6 +1,8 @@
 -- ============================================================
 -- PostgreSQL Schema for Exam Template
 -- RENAME: Change table/column names to match your exam
+-- NOTE: Spring Boot with ddl-auto=update will auto-create tables,
+--        but this script is provided for manual setup or exam submission.
 -- ============================================================
 
 -- CREATE DATABASE exam_template_db;  -- Run separately if needed

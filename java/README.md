@@ -1,123 +1,46 @@
-# Java OOP + Spring Boot + React Exam Template
+# Java OOP + Spring Boot + React — Exam Template
 
-A **generic, reusable examination template** for TVET-style practical exams. Adaptable to any scenario: online shopping, parking management, equipment distribution, employee laptop assignment, etc.
+Generic template for TVET practical exams. Works for any scenario: shopping, parking, equipment rental, laptop assignment — just rename entities and go.
 
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **Backend** | Spring Boot 3.2, Spring Data JPA, Spring Security, JWT |
-| **Frontend** | React 18 + TypeScript + Vite + Axios |
-| **Database** | MySQL or PostgreSQL (configurable via profile) |
-| **API Docs** | Swagger UI at `/swagger-ui.html` |
-| **Auth** | JWT (signup/login), BCrypt password hashing |
-| **Testing** | JUnit 5 + MockMvc + H2 in-memory DB |
+**Stack:** Spring Boot 3.2 | React 18 + TS + Vite | MySQL/PostgreSQL | JWT | Swagger
 
 ---
 
-## Project Structure
+## Run It
 
-```
-java/
-├── backend/                          # Spring Boot API
-│   ├── pom.xml
-│   └── src/main/java/com/exam/template/
-│       ├── TemplateApplication.java  # Main entry point
-│       ├── config/                   # Security, CORS, Swagger configs
-│       ├── controller/               # REST controllers
-│       ├── dto/                      # Request/Response DTOs
-│       ├── entity/                   # JPA entities
-│       ├── exception/                # Global exception handler
-│       ├── repository/               # Spring Data repositories
-│       ├── security/                 # JWT provider, filter, UserDetailsService
-│       ├── seeder/                   # CommandLineRunner data seeder
-│       └── service/                  # Business logic
-├── frontend-react/                   # React + TypeScript SPA
-│   ├── src/
-│   │   ├── api/                      # Axios API calls
-│   │   ├── components/               # Navbar, Pagination, ProtectedRoute
-│   │   ├── context/                  # AuthContext, CartContext
-│   │   └── pages/                    # Login, Signup, Dashboard, Cart, Report
-│   ├── package.json
-│   └── vite.config.ts
-├── database/                         # SQL scripts
-│   ├── schema-mysql.sql
-│   ├── schema-postgresql.sql
-│   ├── trigger-mysql.sql
-│   └── trigger-postgresql.sql
-└── README.md
-```
+### 1. Database
 
----
-
-## Prerequisites
-
-- **Java 17+** (JDK)
-- **Maven 3.8+** (or use the `./mvnw` wrapper)
-- **Node.js 18+** and **npm**
-- **MySQL 8+** or **PostgreSQL 14+**
-
----
-
-## Quick Start Guide
-
-### 1. Create the Database
-
-**MySQL:**
 ```sql
 CREATE DATABASE exam_template_db;
 ```
 
-**PostgreSQL:**
-```sql
-CREATE DATABASE exam_template_db;
-```
+Then load the trigger:
 
-Then run the trigger script (optional but recommended):
 ```bash
-# MySQL
-mysql -u root -p exam_template_db < database/trigger-mysql.sql
-
-# PostgreSQL
 psql -U postgres -d exam_template_db -f database/trigger-postgresql.sql
+# OR: mysql -u root -p exam_template_db < database/trigger-mysql.sql
 ```
 
-> **Note:** Spring Boot with `ddl-auto=update` will auto-create the tables. The SQL schema files are provided for reference/manual setup.
+### 2. Backend
 
-### 2. Configure the Backend
-
-Edit `backend/src/main/resources/application.properties`:
+Set DB profile in `backend/src/main/resources/application.properties`:
 
 ```properties
-# Choose your database: mysql or postgresql
-spring.profiles.active=mysql
+spring.profiles.active=postgresql   # or mysql
 ```
 
-Edit the appropriate profile file:
-- `application-mysql.properties` – set username/password
-- `application-postgresql.properties` – set username/password
-
-### 3. Run the Backend
+Set your DB credentials in `application-postgresql.properties` (or `application-mysql.properties`).
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-The backend starts on **http://localhost:8080**.
+- Runs on **http://localhost:8080**
+- Swagger: **http://localhost:8080/swagger-ui.html**
+- Auto-seeds: `admin@example.com`/`admin123`, `user@example.com`/`user123`, 5 products
 
-Verify:
-- Swagger UI: **http://localhost:8080/swagger-ui.html**
-- API docs: **http://localhost:8080/v3/api-docs**
-
-The `DataSeeder` automatically inserts:
-- **Admin user:** `admin@example.com` / `admin123` (ROLE_ADMIN)
-- **Regular user:** `user@example.com` / `user123` (ROLE_USER)
-- **5 sample products** with initial stock (100 each)
-
-### 4. Run the Frontend
+### 3. Frontend
 
 ```bash
 cd frontend-react
@@ -125,162 +48,141 @@ npm install
 npm run dev
 ```
 
-The frontend starts on **http://localhost:5173**.
+- Runs on **http://localhost:5173**
+- Login → Add to Cart → Checkout → Report. Done.
 
-### 5. Test the Full Flow
+---
 
-1. Open **http://localhost:5173** – see the product dashboard (public)
-2. Click **Signup** or **Login** (`user@example.com` / `user123`)
-3. Click **Add to Cart** on products
-4. Go to **Cart** page, adjust quantities, click **Checkout**
-5. Go to **Report** page to see transactions with date filters
+## Project Layout
+
+```
+backend/src/main/java/com/exam/template/
+├── entity/          # Product, User, StockRecord, Transaction (rename these)
+├── dto/             # Request/response objects (validation here)
+├── repository/      # JPA repos + custom queries (stock calc, date range)
+├── service/         # Business logic (auth, CRUD, checkout, report)
+├── controller/      # REST endpoints (auth, products, stock, transactions)
+├── security/        # JWT generation/validation, filter, SecurityConfig
+├── config/          # CORS, Swagger, Security rules
+├── exception/       # Global handler → consistent JSON errors
+└── seeder/          # Auto-inserts sample data on startup
+
+frontend-react/src/
+├── api/             # Axios instance + API call functions
+├── context/         # AuthContext (JWT state), CartContext (local cart)
+├── components/      # Navbar, Pagination, ProtectedRoute
+└── pages/           # Login, Signup, Dashboard, Cart, Report
+
+database/
+├── schema-*.sql     # Table definitions (reference only, Hibernate creates them)
+└── trigger-*.sql    # Auto-calc total on transaction insert
+```
+
+---
+
+## Code Breakdown (What Does What)
+
+### Backend
+
+| File                           | Purpose                                                           |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `BaseEntity.java`              | Abstract class — `id`, `createdAt`, `updatedAt` auto-managed      |
+| `User.java`                    | email, password(BCrypt), firstName, lastName, role                |
+| `Product.java`                 | code, name, type, price, inDate — **your main entity to rename**  |
+| `StockRecord.java`             | Tracks IN/OUT quantities per product                              |
+| `Transaction.java`             | Links user + product + quantity + total                           |
+| `SecurityConfig.java`          | Defines which endpoints are public/admin/authenticated            |
+| `JwtTokenProvider.java`        | Generates & validates JWT tokens                                  |
+| `JwtAuthenticationFilter.java` | Reads JWT from request header, sets auth context                  |
+| `TransactionService.java`      | Checkout logic — has commented stock validation, enable if needed |
+| `DataSeeder.java`              | Runs on startup — creates users + products + stock                |
+| `GlobalExceptionHandler.java`  | Catches all exceptions → returns clean JSON errors                |
+
+### Frontend
+
+| File                 | Purpose                                                                 |
+| -------------------- | ----------------------------------------------------------------------- |
+| `axiosInstance.ts`   | Base URL + auto-attaches JWT + handles 401 redirect                     |
+| `AuthContext.tsx`    | Stores user/token in state + localStorage, provides login/signup/logout |
+| `CartContext.tsx`    | Local cart state (add/remove/update/clear), no backend persistence      |
+| `DashboardPage.tsx`  | Fetches paginated products, shows cards with "Add to Cart"              |
+| `CartPage.tsx`       | Shows cart items, quantity controls, checkout button → calls API        |
+| `ReportPage.tsx`     | Fetches transaction report with date filters + pagination               |
+| `ProtectedRoute.tsx` | Redirects to /login if not authenticated                                |
+
+### Database Triggers
+
+Auto-calculate `total = unit_price * quantity` on INSERT into transactions table. Java code also does this as fallback — belt and suspenders.
 
 ---
 
 ## API Endpoints
 
-### Authentication (`/api/auth`) – Public
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/signup` | Register (email, password, firstName, lastName, phone) |
-| POST | `/api/auth/login` | Login, returns JWT token |
+| Endpoint                           | Auth   | What                              |
+| ---------------------------------- | ------ | --------------------------------- |
+| `POST /api/auth/signup`            | Public | Register                          |
+| `POST /api/auth/login`             | Public | Login → JWT token                 |
+| `GET /api/products?page=0&size=10` | Public | List entities (paginated)         |
+| `GET /api/products/{code}`         | Public | Get one by code                   |
+| `POST /api/products`               | Admin  | Create entity                     |
+| `PUT /api/products/{code}`         | Admin  | Update                            |
+| `DELETE /api/products/{code}`      | Admin  | Delete                            |
+| `POST /api/quantities`             | Admin  | Add stock record                  |
+| `POST /api/transactions/checkout`  | User   | Process cart                      |
+| `GET /api/transactions/report`     | User   | Transaction report (date filters) |
 
-### Products (`/api/products`) – RENAME to match exam
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/products?page=0&size=10` | Public | Paginated list |
-| GET | `/api/products/{code}` | Public | Get by code |
-| POST | `/api/products` | Admin | Create (via Swagger) |
-| PUT | `/api/products/{code}` | Admin | Update |
-| DELETE | `/api/products/{code}` | Admin | Delete |
-
-### Stock (`/api/quantities`) – Admin only, via Swagger/Postman
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/quantities` | Add stock record (productCode, quantity, operation) |
-
-### Transactions (`/api/transactions`) – Authenticated
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/transactions/checkout` | Checkout cart items |
-| GET | `/api/transactions/report?startDate=...&endDate=...` | Transaction report |
-| GET | `/api/transactions/my-report` | Current user's transactions |
+Admin ops (create product, add stock) → use **Swagger UI** or Postman.
 
 ---
 
-## Manual Data Insertion
+## Adapt for Exam Day
 
-> **Products and quantities must be added manually using Swagger or Postman. No frontend form is provided for these operations, as per exam instructions.**
+### Rename (find & replace)
 
-1. Open Swagger: **http://localhost:8080/swagger-ui.html**
-2. Login as admin via `POST /api/auth/login` with `admin@example.com` / `admin123`
-3. Copy the JWT token from the response
-4. Click **Authorize** button in Swagger, paste: `Bearer <your-token>`
-5. Use `POST /api/products` to add entities
-6. Use `POST /api/quantities` to add stock records
+| Generic       | Replace With (example)           |
+| ------------- | -------------------------------- |
+| `Product`     | `Parking`, `Equipment`, `Laptop` |
+| `code`        | `parkingCode`, `serialNumber`    |
+| `name`        | `parkingName`, `model`           |
+| `price`       | `hourlyFee`, `rentalPrice`       |
+| `Transaction` | `Booking`, `Assignment`          |
+| `StockRecord` | `Availability`, `Inventory`      |
 
----
+### Files to touch
 
-## Database Trigger
+**Backend:** Entity → DTO → Repository → Service → Controller → SecurityConfig paths → DataSeeder
+**Frontend:** `productApi.ts` (API path) → page labels in `DashboardPage`, `CartPage`, `ReportPage`
+**Database:** Update trigger SQL with new table/column names
 
-The trigger auto-calculates `total = unit_price * quantity` on transaction insert. It is provided as a **database-level guarantee**; the Java code also calculates total as a fallback.
+### Enable stock validation
 
-- MySQL: `database/trigger-mysql.sql`
-- PostgreSQL: `database/trigger-postgresql.sql`
-
----
-
-## Adaptation Guide (Exam Day)
-
-### Step 1: Rename Entities
-
-| Generic Name | Example Replacements |
-|-------------|---------------------|
-| `Product` | `Parking`, `Equipment`, `Laptop`, `Car` |
-| `StockRecord` | `AvailableSpaces`, `Inventory`, `StockMovement` |
-| `Transaction` | `Booking`, `Purchase`, `Assignment`, `Rental` |
-| `User` | `Customer`, `Employee`, `Tenant` |
-
-**Backend files to rename/update:**
-- `entity/Product.java` → change class name, table name, fields
-- `dto/ProductRequest.java` → change field names
-- `repository/ProductRepository.java` → change interface name
-- `service/ProductService.java` → change class name
-- `controller/ProductController.java` → change class name and endpoint path (`/api/products` → `/api/parkings`)
-- `config/SecurityConfig.java` → update endpoint paths in security rules
-
-### Step 2: Update DTOs and Fields
-
-Change field names to match the exam:
-- `code` → `parkingCode`, `serialNumber`, `equipmentId`
-- `name` → `parkingName`, `laptopModel`
-- `price` → `hourlyFee`, `rentalPrice`, `dailyRate`
-- `type` → `parkingType`, `category`, `brand`
-- `inDate` → `registrationDate`, `purchaseDate`
-
-### Step 3: Modify Trigger SQL
-
-Replace table/column names in the trigger file to match your renamed entities.
-
-### Step 4: Adjust Business Rules
-
-In `TransactionService.java`:
-- **Stock validation:** Uncomment the stock check block if the exam requires it
-- **Stock deduction:** Uncomment the OUT record creation block
-- **Total calculation:** Modify if the exam needs tax, discount, or different formula
-- **Status values:** Change from "COMPLETED" to "ACTIVE", "BOOKED", etc.
-
-### Step 5: Update Frontend
-
-In `frontend-react/src/`:
-- **Labels:** Search for "Product", "Cart", "Add to Cart" and replace with exam terms
-- **Report columns:** Update `ReportPage.tsx` table headers
-- **Dashboard:** Update `DashboardPage.tsx` card layout if needed
-- **API paths:** If you renamed `/api/products`, update `productApi.ts`
-
-### Step 6: Update Seeder
-
-Edit `seeder/DataSeeder.java` to insert exam-specific sample data.
+In `TransactionService.java`, uncomment the stock check + deduction blocks (clearly marked with comments).
 
 ---
 
-## Exam Day Checklist
+## Checklist
 
-- [ ] Create database (`CREATE DATABASE exam_db;`)
-- [ ] Update `application-mysql.properties` or `application-postgresql.properties` with DB name and credentials
-- [ ] Set `spring.profiles.active=mysql` or `postgresql` in `application.properties`
-- [ ] Run trigger SQL script
-- [ ] Rename entities, DTOs, controllers, services as needed
-- [ ] Update `SecurityConfig.java` endpoint paths
-- [ ] Update `DataSeeder.java` with exam sample data
-- [ ] Run backend: `cd backend && mvn spring-boot:run`
-- [ ] Verify Swagger UI works at `http://localhost:8080/swagger-ui.html`
-- [ ] Update React frontend labels and API paths
-- [ ] Run frontend: `cd frontend-react && npm install && npm run dev`
-- [ ] Manually add core entities via Swagger (if needed beyond seeder)
-- [ ] Test: signup → login → add to cart → checkout → view report
-- [ ] Verify trigger works (total auto-calculated in DB)
-
----
-
-## Running Tests
-
-```bash
-cd backend
-mvn test
 ```
-
-Tests use H2 in-memory database (no MySQL/PostgreSQL required).
+[ ] CREATE DATABASE + run trigger SQL
+[ ] Set profile (mysql/postgresql) + credentials
+[ ] Rename entities to match exam
+[ ] Update SecurityConfig endpoint paths
+[ ] Update DataSeeder with exam data
+[ ] cd backend && mvn spring-boot:run
+[ ] Update frontend labels + API paths
+[ ] cd frontend-react && npm install && npm run dev
+[ ] Test: signup → login → cart → checkout → report
+```
 
 ---
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|---------|
-| CORS error in browser | Check `app.cors.allowed-origins` in `application.properties` includes your frontend URL |
-| 401 on protected endpoints | Ensure JWT token is in `Authorization: Bearer <token>` header |
-| Database connection refused | Verify DB is running, credentials are correct in profile properties |
-| `ddl-auto` not creating tables | Set `spring.jpa.hibernate.ddl-auto=create` (first run only, then switch back to `update`) |
-| Swagger not loading | Ensure `/swagger-ui/**` and `/v3/api-docs/**` are in SecurityConfig's `permitAll()` |
-| Frontend can't reach backend | Backend must be on port 8080, check `API_BASE_URL` in `axiosInstance.ts` |
+| Problem                      | Fix                                                                           |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| CORS error                   | Add your frontend URL to `app.cors.allowed-origins` in application.properties |
+| 401 errors                   | Token missing/expired — re-login                                              |
+| DB connection refused        | Check credentials in profile properties, ensure DB is running                 |
+| Tables not created           | Set `ddl-auto=create` once, then switch back to `update`                      |
+| Swagger not loading          | Check SecurityConfig permits `/swagger-ui/**`, `/v3/api-docs/**`              |
+| Frontend can't reach backend | Check `API_BASE_URL` in `src/api/axiosInstance.ts` matches backend port       |

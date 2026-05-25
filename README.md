@@ -1,77 +1,67 @@
-# NE Templates - TVET Exam Templates
+# NE Templates
 
-Ready-to-use templates for Rwanda National Examinations practical exams.
+Production-ready templates for Rwanda TVET practical exams.
 
 ## Templates
 
-### ✅ RESTful API & Web App (`restful/`)
-
-**Stack**: NestJS + Next.js + PostgreSQL + JWT + Swagger  
-**Features**: Auth, CRUD, Pagination, Role-based access, Swagger docs  
-**Status**: Production-ready
-
-### 🤖 Intelligent Robotics (`intelligent_robotics/`)
-
-**Includes**: Face recognition (ArcFace)  
-**Status**: Template available
-
-### 🚧 Coming Soon
-
-- `dsa/` - Data Structures & Algorithms
-- `java/` - Java programming
-- `mobile/` - Mobile development
+| Template                                             | Stack                                  | Status    |
+| ---------------------------------------------------- | -------------------------------------- | --------- |
+| [**restful/**](./restful/)                           | NestJS + Next.js + PostgreSQL          | ✅ Ready  |
+| [**java/**](./java/)                                 | Spring Boot + React + MySQL/PostgreSQL | ✅ Ready  |
+| [**mobile/**](./mobile/flux-mobile/)                 | Expo + React Native + TypeScript       | ✅ Ready  |
+| [**intelligent_robotics/**](./intelligent_robotics/) | Python + ArcFace                       | ✅ Ready  |
+| **dsa/**                                             | Data Structures & Algorithms           | 🚧 Coming |
 
 ## Quick Start
 
-### RESTful Template
+### RESTful (NestJS + Next.js)
 
 ```bash
-cd restful
-
-# Backend
-cd backend
-npm install
-cp .env.example .env          # Edit DATABASE_URL
-npm run prisma:migrate
-npm run prisma:seed
-npm run start:dev             # → http://localhost:3001
-
-# Frontend (new terminal)
-cd frontend
-npm install
-cp .env.local.example .env.local
-npm run dev                   # → http://localhost:3000
+cd restful/backend && npm i && cp .env.example .env && npm run start:dev
+cd restful/frontend && npm i && npm run dev
 ```
 
-**Login**: `admin@example.com` / `Admin123!`  
-**Swagger**: http://localhost:3001/api/docs
+→ Backend: `localhost:3001` | Frontend: `localhost:3000` | Swagger: `localhost:3001/api/docs`
 
-See [restful/README.md](./restful/README.md) for full guide.
+### Java (Spring Boot + React)
+
+```bash
+cd java/backend && mvn spring-boot:run
+cd java/frontend-react && npm i && npm run dev
+```
+
+→ Backend: `localhost:8080` | Frontend: `localhost:5173`
+
+### Mobile (Expo)
+
+```bash
+cd mobile/flux-mobile && npm i && npx expo start
+```
+
+→ Scan QR with Expo Go
 
 ### Intelligent Robotics
 
 ```bash
 cd intelligent_robotics/face_recognition_arcface
-# Follow README.md in that folder
+# See README.md
 ```
 
-## Usage Pattern
+## How to Use
 
-1. **Copy template** to your exam workspace
-2. **Read requirements** → Identify entities
-3. **Update database schema** → Add models
-4. **Copy CRUD modules** → Adapt for entities
-5. **Test** → Swagger + Browser
-6. **Submit**
+1. **Copy** the template folder to your workspace
+2. **Read** exam requirements → identify entities
+3. **Edit config** → update entity names, fields, API endpoints
+4. **Run & test** → use Swagger/browser/Expo Go
+5. **Submit**
 
 ## Exam Tips
 
-- Plan database schema first
-- Copy `items/` module for new entities
-- Test each feature in Swagger
-- Use provided auth system
-- Keep code clean and organized
+- **Plan schema first** — draw entities before coding
+- **Copy existing modules** — adapt `items/` or `expenses/` for new entities
+- **Test incrementally** — verify each feature works
+- **Keep it simple** — use provided auth, don't reinvent
 
 ---
 
-**Each template folder contains detailed setup and usage instructions.**
+**See each folder's README for detailed instructions.**

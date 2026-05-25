@@ -1,98 +1,96 @@
 /**
- * =============================================================================
+ * ===========================================================================
  * DSA PRACTICAL EXAM TEMPLATE - CONFIGURATION FILE
- * =============================================================================
+ * ===========================================================================
  * 
- * HOW TO ADAPT TO A NEW EXAM SCENARIO:
- * ------------------------------------
- * 1. Change ENTITY_NAME_SINGULAR and ENTITY_NAME_PLURAL (e.g., "City", "Cities")
- * 2. Change RELATION_NAME (e.g., "Road", "Connection", "Friendship")
- * 3. Update file names (ENTITIES_FILE, RELATIONS_FILE, WEIGHTS_FILE)
- * 4. Modify FIELD_* names to match your scenario
- * 5. Adjust MAX_ENTITIES if needed
- * 6. Choose interaction style: USE_COMMAND_STYLE or USE_MENU_STYLE
+ * QUICK ADAPTATION (5 minutes):
+ * 1. Set MODE: USE_COMMAND_MODE or USE_MENU_MODE
+ * 2. Set ENTITY names: ENTITY_SINGULAR, ENTITY_PLURAL
+ * 3. Set FIELD labels: FIELD_ID, FIELD_NAME, FIELD_QUANTITY, FIELD_DATE
+ * 4. Enable/disable features: HAS_QUANTITY, HAS_DATE, ENABLE_GRAPH
+ * 5. Set file names: FILE_ITEMS, FILE_CONNECTIONS, FILE_WEIGHTS
  * 
- * COMMON SCENARIOS:
- * - Inventory Management: Item, Items, Dependency
- * - Road Network: City, Cities, Road
- * - Student Records: Student, Students, Friendship
- * - Task Management: Task, Tasks, Dependency
- * =============================================================================
+ * SCENARIOS:
+ *   Inventory:  Item/Items,    Quantity,   Date,       Dependency
+ *   Roads:      City/Cities,   Population, Founded,    Road
+ *   Students:   Student/Students, Score,   Enrolled,   Friendship
+ *   Library:    Book/Books,    Copies,     Published,  Reference
+ * ===========================================================================
  */
 
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <string>
+// ===========================================================================
+// MODE SELECTION - Uncomment ONE
+// ===========================================================================
+#define USE_COMMAND_MODE    // Commands: add, list, search, help, exit
+// #define USE_MENU_MODE    // Menu: numbered options 1-9
 
-// =============================================================================
-// INTERACTION STYLE - Uncomment ONE of these
-// =============================================================================
-#define USE_COMMAND_STYLE  // Command-line style: itemadd, itemslist, help, exit
-// #define USE_MENU_STYLE  // Menu style: numbered options 1-9
+// ===========================================================================
+// FEATURE TOGGLES
+// ===========================================================================
+#define HAS_QUANTITY        true   // Enable quantity/score/population field
+#define HAS_DATE            true   // Enable date field
+#define ENABLE_GRAPH        true   // Enable adjacency matrix & relations
+#define GRAPH_UNDIRECTED    true   // true = bidirectional, false = directed
+#define ALLOW_DUPLICATE_NAMES false // Allow same name for different IDs
+#define AUTO_SORT           true   // Sort after add/edit
+#define SEED_ON_START       false  // Populate sample data on first run
 
-// =============================================================================
-// ENTITY CONFIGURATION
-// =============================================================================
-#define ENTITY_NAME_SINGULAR "Item"
-#define ENTITY_NAME_PLURAL   "Items"
-#define RELATION_NAME        "Connection"  // e.g., "Road", "Dependency", "Link"
+// ===========================================================================
+// ENTITY & RELATION NAMES
+// ===========================================================================
+#define ENTITY_SINGULAR     "Item"
+#define ENTITY_PLURAL       "Items"
+#define RELATION_NAME       "Connection"   // Road, Dependency, Friendship
+#define CMD_PREFIX          ""             // Command prefix (empty or "item")
 
-// Command prefix for command-line style (lowercase)
-#define COMMAND_PREFIX       "item"  // Commands: itemadd, itemslist, itemsearch, etc.
+// ===========================================================================
+// FIELD LABELS (for display and prompts)
+// ===========================================================================
+#define FIELD_ID            "ID"
+#define FIELD_NAME          "Name"
+#define FIELD_QUANTITY      "Quantity"     // Budget, Population, Score, Copies
+#define FIELD_DATE          "Date"         // Founded, Enrolled, Published
 
-// =============================================================================
-// FIELD NAMES (for display and prompts)
-// =============================================================================
-#define FIELD_ID             "ID"
-#define FIELD_NAME           "Name"
-#define FIELD_QUANTITY       "Quantity"    // Can be: "Budget", "Population", "Score"
-#define FIELD_DATE           "Date"        // Can be: "Registration Date", "Created"
+// ===========================================================================
+// VALIDATION LIMITS
+// ===========================================================================
+#define MAX_ENTITIES        100
+#define MIN_ID              1
+#define MAX_ID              9999
+#define MAX_NAME_LEN        50
+#define MIN_QUANTITY        0
+#define MAX_QUANTITY        1000000
+#define DATE_FMT            "YYYY-MM-DD"
 
-// =============================================================================
-// LIMITS AND SIZES
-// =============================================================================
-#define MAX_ENTITIES         100
-#define MAX_NAME_LENGTH      50
-#define MAX_COMMAND_LENGTH   256
-
-// =============================================================================
+// ===========================================================================
 // FILE NAMES
-// =============================================================================
-#define ENTITIES_FILE        "items.csv"
-#define RELATIONS_FILE       "connections.txt"
-#define WEIGHTS_FILE         "weights.txt"
+// ===========================================================================
+#define FILE_ITEMS          "items.csv"
+#define FILE_CONNECTIONS    "connections.txt"
+#define FILE_WEIGHTS        "weights.txt"
 
-// =============================================================================
-// SORTING CONFIGURATION
-// =============================================================================
-// Sort field: 0 = ID, 1 = Name, 2 = Quantity, 3 = Date
-#define DEFAULT_SORT_FIELD   0
-#define SORT_ASCENDING       true
+// ===========================================================================
+// SORTING (0=ID, 1=Name, 2=Quantity, 3=Date)
+// ===========================================================================
+#define DEFAULT_SORT_FIELD  0
+#define SORT_ASCENDING      true
 
-// =============================================================================
-// VALIDATION RULES
-// =============================================================================
-#define MIN_ID               1
-#define MAX_ID               9999
-#define MIN_QUANTITY         0
-#define MAX_QUANTITY         1000000
-#define DATE_FORMAT          "YYYY-MM-DD"
+// ===========================================================================
+// DISPLAY WIDTHS
+// ===========================================================================
+#define COL_ID              8
+#define COL_NAME            20
+#define COL_QTY             12
+#define COL_DATE            12
+#define COL_MATRIX          5
 
-// =============================================================================
-// DISPLAY SETTINGS
-// =============================================================================
-#define COL_WIDTH_ID         8
-#define COL_WIDTH_NAME       25
-#define COL_WIDTH_QUANTITY   12
-#define COL_WIDTH_DATE       15
-#define MATRIX_CELL_WIDTH    4
-
-// =============================================================================
-// GRAPH SETTINGS
-// =============================================================================
-#define NO_CONNECTION        0
-#define DEFAULT_WEIGHT       1
-#define NO_WEIGHT            -1
+// ===========================================================================
+// GRAPH CONSTANTS
+// ===========================================================================
+#define NO_CONN             0
+#define NO_WEIGHT           -1
 
 #endif // CONFIG_H

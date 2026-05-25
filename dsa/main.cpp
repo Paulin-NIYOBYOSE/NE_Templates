@@ -1,33 +1,15 @@
 /**
- * =============================================================================
- * DSA PRACTICAL EXAM TEMPLATE - GENERIC CONSOLE APPLICATION
- * =============================================================================
+ * ===========================================================================
+ * DSA PRACTICAL EXAM TEMPLATE
+ * ===========================================================================
+ * QUICK START:
+ *   1. Edit config.h (names, features, files)
+ *   2. make && ./dsa_app
  * 
- * A reusable template for Data Structures and Algorithms practical exams.
- * Supports both command-line and menu-based interaction styles.
- * 
- * FEATURES:
- * - Generic entity management (add, list, search, edit, delete)
- * - Graph support with adjacency matrix and weight matrix
- * - File persistence (CSV for entities, text for matrices)
- * - Sorting by multiple fields
- * - Input validation with meaningful error messages
- * - Case-insensitive command parsing
- * 
- * COMPILATION:
- *   g++ -std=c++17 -o dsa_app main.cpp
- *   OR use: make
- * 
- * USAGE:
- *   ./dsa_app
- * 
- * TO ADAPT TO A NEW SCENARIO:
- * 1. Edit config.h to change entity names, field names, file names
- * 2. Modify the Item struct fields if needed (add/remove fields)
- * 3. Update validation rules in config.h
- * 4. Choose interaction style (command or menu) in config.h
- * 
- * =============================================================================
+ * ADAPTATION:
+ *   - config.h: ENTITY_SINGULAR/PLURAL, FIELD_*, HAS_*, ENABLE_GRAPH
+ *   - Below: Modify Item struct if adding custom fields
+ * ===========================================================================
  */
 
 #include <iostream>
@@ -38,154 +20,106 @@
 #include <algorithm>
 #include <iomanip>
 #include <cctype>
-#include <cstring>
 #include <limits>
-
 #include "config.h"
 
 using namespace std;
 
-// =============================================================================
-// DATA STRUCTURES
-// =============================================================================
-
-/**
- * Generic Entity Structure
- * 
- * TO CUSTOMIZE FOR YOUR EXAM:
- * - Rename fields (e.g., quantity -> budget, population, score)
- * - Add new fields (e.g., string category, double price)
- * - Remove unused fields
- * - Update all functions that use this struct
- */
+// ===========================================================================
+// ITEM STRUCT - Modify fields here for custom scenarios
+// ===========================================================================
 struct Item {
     int id;
     string name;
-    int quantity;      // Can represent: budget, population, score, count, etc.
-    string date;       // Format: YYYY-MM-DD
+#if HAS_QUANTITY
+    int quantity;
+#endif
+#if HAS_DATE
+    string date;
+#endif
     
-    // Default constructor
-    Item() : id(0), name(""), quantity(0), date("") {}
+    Item() : id(0), name("") {
+#if HAS_QUANTITY
+        quantity = 0;
+#endif
+#if HAS_DATE
+        date = "";
+#endif
+    }
     
-    // Parameterized constructor
-    Item(int _id, const string& _name, int _qty, const string& _date)
-        : id(_id), name(_name), quantity(_qty), date(_date) {}
+    Item(int _id, const string& _name, int _qty = 0, const string& _date = "")
+        : id(_id), name(_name) {
+#if HAS_QUANTITY
+        quantity = _qty;
+#endif
+#if HAS_DATE
+        date = _date;
+#endif
+        (void)_qty; (void)_date; // Suppress unused warnings
+    }
 };
 
-// =============================================================================
-// GLOBAL DATA STORAGE
-// =============================================================================
+// ===========================================================================
+// GLOBAL DATA
+// ===========================================================================
+vector<Item> items;
+#if ENABLE_GRAPH
+int adjMatrix[MAX_ENTITIES][MAX_ENTITIES];
+int weightMatrix[MAX_ENTITIES][MAX_ENTITIES];
+#endif
 
-vector<Item> items;                              // Main entity storage
-int adjacencyMatrix[MAX_ENTITIES][MAX_ENTITIES]; // Connection matrix (0/1)
-int weightMatrix[MAX_ENTITIES][MAX_ENTITIES];    // Weight/cost matrix
-int entityCount = 0;                             // Current number of entities
-
-// =============================================================================
+// ===========================================================================
 // UTILITY FUNCTIONS
-// =============================================================================
-
-/**
- * Convert string to lowercase (for case-insensitive comparison)
- */
-string toLower(const string& str) {
-    string result = str;
-    transform(result.begin(), result.end(), result.begin(), ::tolower);
-    return result;
+// ===========================================================================
+string toLower(const string& s) {
+    string r = s;
+    transform(r.begin(), r.end(), r.begin(), ::tolower);
+    return r;
 }
 
-/**
- * Trim whitespace from both ends of a string
- */
-string trim(const string& str) {
-    size_t start = str.find_first_not_of(" \t\r\n");
+string trim(const string& s) {
+    size_t start = s.find_first_not_of(" \t\r\n");
     if (start == string::npos) return "";
-    size_t end = str.find_last_not_of(" \t\r\n");
-    return str.substr(start, end - start + 1);
+    size_t end = s.find_last_not_of(" \t\r\n");
+    return s.substr(start, end - start + 1);
 }
 
-/**
- * Case-insensitive string comparison
- */
-bool equalsIgnoreCase(const string& a, const string& b) {
-    return toLower(a) == toLower(b);
-}
-
-/**
- * Check if string contains only digits
- */
-bool isNumeric(const string& str) {
-    if (str.empty()) return false;
-    for (char c : str) {
-        if (!isdigit(c)) return false;
-    }
+bool isNumeric(const string& s) {
+    if (s.empty()) return false;
+    size_t start = (s[0] == '-') ? 1 : 0;
+    if (start == s.length()) return false;
+    for (size_t i = start; i < s.length(); i++)
+        if (!isdigit(s[i])) return false;
     return true;
 }
 
-/**
- * Validate date format (YYYY-MM-DD)
- */
-bool isValidDate(const string& date) {
-    if (date.length() != 10) return false;
-    if (date[4] != '-' || date[7] != '-') return false;
-    
-    string year = date.substr(0, 4);
-    string month = date.substr(5, 2);
-    string day = date.substr(8, 2);
-    
-    if (!isNumeric(year) || !isNumeric(month) || !isNumeric(day)) return false;
-    
-    int y = stoi(year);
-    int m = stoi(month);
-    int d = stoi(day);
-    
-    if (y < 1900 || y > 2100) return false;
-    if (m < 1 || m > 12) return false;
-    if (d < 1 || d > 31) return false;
-    
-    return true;
-}
-
-/**
- * Clear input buffer
- */
-void clearInputBuffer() {
+void clearInput() {
     cin.clear();
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 }
 
-/**
- * Print a horizontal separator line
- */
-void printSeparator(int width = 70) {
-    cout << string(width, '-') << endl;
+void printLine(int w = 60) { cout << string(w, '-') << endl; }
+
+// ===========================================================================
+// VALIDATION
+// ===========================================================================
+bool isValidDate(const string& d) {
+    if (d.length() != 10 || d[4] != '-' || d[7] != '-') return false;
+    string y = d.substr(0,4), m = d.substr(5,2), day = d.substr(8,2);
+    if (!isNumeric(y) || !isNumeric(m) || !isNumeric(day)) return false;
+    int yi = stoi(y), mi = stoi(m), di = stoi(day);
+    return yi >= 1900 && yi <= 2100 && mi >= 1 && mi <= 12 && di >= 1 && di <= 31;
 }
 
-/**
- * Print centered text
- */
-void printCentered(const string& text, int width = 70) {
-    int padding = (width - text.length()) / 2;
-    cout << string(max(0, padding), ' ') << text << endl;
-}
-
-// =============================================================================
-// VALIDATION FUNCTIONS
-// =============================================================================
-
-/**
- * Check if ID is valid (within range and not duplicate)
- */
-bool isValidId(int id, bool checkDuplicate = true) {
+bool validateId(int id, bool checkDup = true) {
     if (id < MIN_ID || id > MAX_ID) {
-        cout << "Error: " << FIELD_ID << " must be between " << MIN_ID << " and " << MAX_ID << endl;
+        cerr << "Error: " << FIELD_ID << " must be " << MIN_ID << "-" << MAX_ID << endl;
         return false;
     }
-    
-    if (checkDuplicate) {
-        for (const auto& item : items) {
-            if (item.id == id) {
-                cout << "Error: " << ENTITY_NAME_SINGULAR << " with " << FIELD_ID << " " << id << " already exists." << endl;
+    if (checkDup) {
+        for (const auto& it : items) {
+            if (it.id == id) {
+                cerr << "Error: " << FIELD_ID << " " << id << " already exists." << endl;
                 return false;
             }
         }
@@ -193,1433 +127,740 @@ bool isValidId(int id, bool checkDuplicate = true) {
     return true;
 }
 
-/**
- * Check if name is valid (not empty, within length)
- */
-bool isValidName(const string& name) {
-    if (name.empty()) {
-        cout << "Error: " << FIELD_NAME << " cannot be empty." << endl;
-        return false;
-    }
-    if (name.length() > MAX_NAME_LENGTH) {
-        cout << "Error: " << FIELD_NAME << " cannot exceed " << MAX_NAME_LENGTH << " characters." << endl;
-        return false;
-    }
-    return true;
-}
-
-/**
- * Check if quantity is valid (within range)
- */
-bool isValidQuantity(int qty) {
-    if (qty < MIN_QUANTITY || qty > MAX_QUANTITY) {
-        cout << "Error: " << FIELD_QUANTITY << " must be between " << MIN_QUANTITY << " and " << MAX_QUANTITY << endl;
-        return false;
-    }
-    return true;
-}
-
-/**
- * Find item index by ID (-1 if not found)
- */
-int findItemIndexById(int id) {
-    for (size_t i = 0; i < items.size(); i++) {
-        if (items[i].id == id) return i;
-    }
-    return -1;
-}
-
-/**
- * Find item index by name (case-insensitive, -1 if not found)
- */
-int findItemIndexByName(const string& name) {
-    for (size_t i = 0; i < items.size(); i++) {
-        if (equalsIgnoreCase(items[i].name, name)) return i;
-    }
-    return -1;
-}
-
-// =============================================================================
-// CORE OPERATIONS
-// =============================================================================
-
-/**
- * Initialize matrices to default values
- */
-void initializeMatrices() {
-    for (int i = 0; i < MAX_ENTITIES; i++) {
-        for (int j = 0; j < MAX_ENTITIES; j++) {
-            adjacencyMatrix[i][j] = NO_CONNECTION;
-            weightMatrix[i][j] = NO_WEIGHT;
+bool validateName(const string& n) {
+    if (n.empty()) { cerr << "Error: " << FIELD_NAME << " cannot be empty." << endl; return false; }
+    if (n.length() > MAX_NAME_LEN) { cerr << "Error: " << FIELD_NAME << " too long (max " << MAX_NAME_LEN << ")." << endl; return false; }
+#if !ALLOW_DUPLICATE_NAMES
+    for (const auto& it : items) {
+        if (toLower(it.name) == toLower(n)) {
+            cerr << "Error: " << FIELD_NAME << " '" << n << "' already exists." << endl;
+            return false;
         }
     }
-}
-
-/**
- * Add a new entity
- * Returns true if successful, false otherwise
- */
-bool addItem(int id, const string& name, int quantity, const string& date) {
-    // Validate all fields
-    if (!isValidId(id)) return false;
-    if (!isValidName(name)) return false;
-    if (!isValidQuantity(quantity)) return false;
-    if (!isValidDate(date)) {
-        cout << "Error: Invalid date format. Use " << DATE_FORMAT << endl;
-        return false;
-    }
-    
-    // Check capacity
-    if (items.size() >= MAX_ENTITIES) {
-        cout << "Error: Maximum capacity (" << MAX_ENTITIES << ") reached." << endl;
-        return false;
-    }
-    
-    // Add the item
-    items.push_back(Item(id, name, quantity, date));
-    entityCount++;
-    
-    cout << ENTITY_NAME_SINGULAR << " added successfully. Total: " << items.size() << endl;
+#endif
     return true;
 }
 
-/**
- * Add item interactively (prompts user for input)
- */
-bool addItemInteractive() {
-    int id, quantity;
-    string name, date;
-    
-    cout << "\n=== Add New " << ENTITY_NAME_SINGULAR << " ===" << endl;
-    
-    // Get ID
-    cout << FIELD_ID << " (" << MIN_ID << "-" << MAX_ID << "): ";
-    if (!(cin >> id)) {
-        clearInputBuffer();
-        cout << "Error: Invalid " << FIELD_ID << " format." << endl;
+#if HAS_QUANTITY
+bool validateQty(int q) {
+    if (q < MIN_QUANTITY || q > MAX_QUANTITY) {
+        cerr << "Error: " << FIELD_QUANTITY << " must be " << MIN_QUANTITY << "-" << MAX_QUANTITY << endl;
         return false;
     }
-    clearInputBuffer();
+    return true;
+}
+#endif
+
+int findById(int id) {
+    for (size_t i = 0; i < items.size(); i++)
+        if (items[i].id == id) return (int)i;
+    return -1;
+}
+
+int findByName(const string& n) {
+    string ln = toLower(n);
+    for (size_t i = 0; i < items.size(); i++)
+        if (toLower(items[i].name) == ln) return (int)i;
+    return -1;
+}
+
+// ===========================================================================
+// SORTING
+// ===========================================================================
+bool cmpId(const Item& a, const Item& b) { return SORT_ASCENDING ? a.id < b.id : a.id > b.id; }
+bool cmpName(const Item& a, const Item& b) { return SORT_ASCENDING ? toLower(a.name) < toLower(b.name) : toLower(a.name) > toLower(b.name); }
+#if HAS_QUANTITY
+bool cmpQty(const Item& a, const Item& b) { return SORT_ASCENDING ? a.quantity < b.quantity : a.quantity > b.quantity; }
+#endif
+#if HAS_DATE
+bool cmpDate(const Item& a, const Item& b) { return SORT_ASCENDING ? a.date < b.date : a.date > b.date; }
+#endif
+
+void sortItems(int field = DEFAULT_SORT_FIELD, bool silent = false) {
+    switch (field) {
+        case 0: sort(items.begin(), items.end(), cmpId); if (!silent) cout << "Sorted by " << FIELD_ID << endl; break;
+        case 1: sort(items.begin(), items.end(), cmpName); if (!silent) cout << "Sorted by " << FIELD_NAME << endl; break;
+#if HAS_QUANTITY
+        case 2: sort(items.begin(), items.end(), cmpQty); if (!silent) cout << "Sorted by " << FIELD_QUANTITY << endl; break;
+#endif
+#if HAS_DATE
+        case 3: sort(items.begin(), items.end(), cmpDate); if (!silent) cout << "Sorted by " << FIELD_DATE << endl; break;
+#endif
+        default: sort(items.begin(), items.end(), cmpId); break;
+    }
+}
+
+// ===========================================================================
+// DISPLAY
+// ===========================================================================
+void displayHeader() {
+    printLine();
+    cout << left << setw(COL_ID) << FIELD_ID << setw(COL_NAME) << FIELD_NAME;
+#if HAS_QUANTITY
+    cout << setw(COL_QTY) << FIELD_QUANTITY;
+#endif
+#if HAS_DATE
+    cout << setw(COL_DATE) << FIELD_DATE;
+#endif
+    cout << endl;
+    printLine();
+}
+
+void displayItem(const Item& it) {
+    cout << left << setw(COL_ID) << it.id << setw(COL_NAME) << it.name;
+#if HAS_QUANTITY
+    cout << setw(COL_QTY) << it.quantity;
+#endif
+#if HAS_DATE
+    cout << setw(COL_DATE) << it.date;
+#endif
+    cout << endl;
+}
+
+void listItems() {
+    if (items.empty()) { cout << "No " << ENTITY_PLURAL << " found." << endl; return; }
+#if AUTO_SORT
+    sortItems(DEFAULT_SORT_FIELD, true);
+#endif
+    cout << "\n=== " << ENTITY_PLURAL << " (" << items.size() << ") ===" << endl;
+    displayHeader();
+    for (const auto& it : items) displayItem(it);
+    printLine();
+}
+
+// ===========================================================================
+// CRUD OPERATIONS
+// ===========================================================================
+bool addItem(int id, const string& name, int qty = 0, const string& date = "") {
+    if (!validateId(id)) return false;
+    if (!validateName(name)) return false;
+#if HAS_QUANTITY
+    if (!validateQty(qty)) return false;
+#endif
+#if HAS_DATE
+    if (!date.empty() && !isValidDate(date)) {
+        cerr << "Error: Invalid date. Use " << DATE_FMT << endl;
+        return false;
+    }
+#endif
+    if (items.size() >= MAX_ENTITIES) {
+        cerr << "Error: Max capacity (" << MAX_ENTITIES << ") reached." << endl;
+        return false;
+    }
+    items.push_back(Item(id, name, qty, date));
+#if AUTO_SORT
+    sortItems(DEFAULT_SORT_FIELD, true);
+#endif
+    cout << ENTITY_SINGULAR << " added. Total: " << items.size() << endl;
+    return true;
+}
+
+bool addItemInteractive() {
+    cout << "\n=== Add " << ENTITY_SINGULAR << " ===" << endl;
     
-    // Get Name
+    int id;
+    cout << FIELD_ID << " (" << MIN_ID << "-" << MAX_ID << "): ";
+    if (!(cin >> id)) { clearInput(); cerr << "Invalid input." << endl; return false; }
+    clearInput();
+    
+    string name;
     cout << FIELD_NAME << ": ";
     getline(cin, name);
     name = trim(name);
     
-    // Get Quantity
+    int qty = 0;
+#if HAS_QUANTITY
     cout << FIELD_QUANTITY << " (" << MIN_QUANTITY << "-" << MAX_QUANTITY << "): ";
-    if (!(cin >> quantity)) {
-        clearInputBuffer();
-        cout << "Error: Invalid " << FIELD_QUANTITY << " format." << endl;
-        return false;
-    }
-    clearInputBuffer();
+    if (!(cin >> qty)) { clearInput(); cerr << "Invalid input." << endl; return false; }
+    clearInput();
+#endif
     
-    // Get Date
-    cout << FIELD_DATE << " (" << DATE_FORMAT << "): ";
+    string date = "";
+#if HAS_DATE
+    cout << FIELD_DATE << " (" << DATE_FMT << "): ";
     getline(cin, date);
     date = trim(date);
+#endif
     
-    return addItem(id, name, quantity, date);
+    return addItem(id, name, qty, date);
 }
 
-// =============================================================================
-// SORTING FUNCTIONS
-// =============================================================================
-
-/**
- * Comparator for sorting by ID
- */
-bool compareById(const Item& a, const Item& b) {
-    return SORT_ASCENDING ? (a.id < b.id) : (a.id > b.id);
-}
-
-/**
- * Comparator for sorting by Name (case-insensitive)
- */
-bool compareByName(const Item& a, const Item& b) {
-    string nameA = toLower(a.name);
-    string nameB = toLower(b.name);
-    return SORT_ASCENDING ? (nameA < nameB) : (nameA > nameB);
-}
-
-/**
- * Comparator for sorting by Quantity
- */
-bool compareByQuantity(const Item& a, const Item& b) {
-    return SORT_ASCENDING ? (a.quantity < b.quantity) : (a.quantity > b.quantity);
-}
-
-/**
- * Comparator for sorting by Date
- */
-bool compareByDate(const Item& a, const Item& b) {
-    return SORT_ASCENDING ? (a.date < b.date) : (a.date > b.date);
-}
-
-/**
- * Sort items by specified field
- * field: 0=ID, 1=Name, 2=Quantity, 3=Date
- */
-void sortItems(int field = DEFAULT_SORT_FIELD) {
-    switch (field) {
-        case 0:
-            sort(items.begin(), items.end(), compareById);
-            cout << ENTITY_NAME_PLURAL << " sorted by " << FIELD_ID << endl;
-            break;
-        case 1:
-            sort(items.begin(), items.end(), compareByName);
-            cout << ENTITY_NAME_PLURAL << " sorted by " << FIELD_NAME << endl;
-            break;
-        case 2:
-            sort(items.begin(), items.end(), compareByQuantity);
-            cout << ENTITY_NAME_PLURAL << " sorted by " << FIELD_QUANTITY << endl;
-            break;
-        case 3:
-            sort(items.begin(), items.end(), compareByDate);
-            cout << ENTITY_NAME_PLURAL << " sorted by " << FIELD_DATE << endl;
-            break;
-        default:
-            sort(items.begin(), items.end(), compareById);
-            cout << ENTITY_NAME_PLURAL << " sorted by " << FIELD_ID << " (default)" << endl;
-    }
-}
-
-// =============================================================================
-// DISPLAY FUNCTIONS
-// =============================================================================
-
-/**
- * Display table header
- */
-void displayTableHeader() {
-    printSeparator();
-    cout << left 
-         << setw(COL_WIDTH_ID) << FIELD_ID
-         << setw(COL_WIDTH_NAME) << FIELD_NAME
-         << setw(COL_WIDTH_QUANTITY) << FIELD_QUANTITY
-         << setw(COL_WIDTH_DATE) << FIELD_DATE
-         << endl;
-    printSeparator();
-}
-
-/**
- * Display a single item
- */
-void displayItem(const Item& item) {
-    cout << left 
-         << setw(COL_WIDTH_ID) << item.id
-         << setw(COL_WIDTH_NAME) << item.name
-         << setw(COL_WIDTH_QUANTITY) << item.quantity
-         << setw(COL_WIDTH_DATE) << item.date
-         << endl;
-}
-
-/**
- * List all entities
- */
-void listItems(bool sorted = true, int sortField = DEFAULT_SORT_FIELD) {
-    if (items.empty()) {
-        cout << "No " << ENTITY_NAME_PLURAL << " found." << endl;
-        return;
-    }
-    
-    if (sorted) {
-        sortItems(sortField);
-    }
-    
-    cout << "\n=== " << ENTITY_NAME_PLURAL << " List (" << items.size() << " total) ===" << endl;
-    displayTableHeader();
-    
-    for (const auto& item : items) {
-        displayItem(item);
-    }
-    printSeparator();
-}
-
-/**
- * Search for an entity by ID
- */
 void searchById(int id) {
-    int index = findItemIndexById(id);
-    if (index == -1) {
-        cout << ENTITY_NAME_SINGULAR << " with " << FIELD_ID << " " << id << " not found." << endl;
-        return;
-    }
-    
-    cout << "\n=== Search Result ===" << endl;
-    displayTableHeader();
-    displayItem(items[index]);
-    printSeparator();
+    int idx = findById(id);
+    if (idx == -1) { cout << ENTITY_SINGULAR << " not found." << endl; return; }
+    cout << "\n=== Found ===" << endl;
+    displayHeader();
+    displayItem(items[idx]);
+    printLine();
 }
 
-/**
- * Search for an entity by name (case-insensitive, partial match)
- */
 void searchByName(const string& name) {
+    string ln = toLower(name);
     vector<Item> results;
-    string searchTerm = toLower(name);
-    
-    for (const auto& item : items) {
-        if (toLower(item.name).find(searchTerm) != string::npos) {
-            results.push_back(item);
-        }
-    }
-    
-    if (results.empty()) {
-        cout << "No " << ENTITY_NAME_PLURAL << " found matching '" << name << "'." << endl;
-        return;
-    }
-    
-    cout << "\n=== Search Results (" << results.size() << " found) ===" << endl;
-    displayTableHeader();
-    for (const auto& item : results) {
-        displayItem(item);
-    }
-    printSeparator();
+    for (const auto& it : items)
+        if (toLower(it.name).find(ln) != string::npos) results.push_back(it);
+    if (results.empty()) { cout << "No matches for '" << name << "'." << endl; return; }
+    cout << "\n=== Results (" << results.size() << ") ===" << endl;
+    displayHeader();
+    for (const auto& it : results) displayItem(it);
+    printLine();
 }
 
-/**
- * Search interactively
- */
-void searchItemInteractive() {
-    cout << "\nSearch by: (1) " << FIELD_ID << "  (2) " << FIELD_NAME << endl;
-    cout << "Choice: ";
-    
-    int choice;
-    if (!(cin >> choice)) {
-        clearInputBuffer();
-        cout << "Invalid choice." << endl;
-        return;
-    }
-    clearInputBuffer();
-    
-    if (choice == 1) {
-        cout << "Enter " << FIELD_ID << ": ";
-        int id;
-        if (!(cin >> id)) {
-            clearInputBuffer();
-            cout << "Invalid " << FIELD_ID << "." << endl;
-            return;
-        }
-        clearInputBuffer();
+void searchInteractive() {
+    cout << "Search by (1)" << FIELD_ID << " (2)" << FIELD_NAME << ": ";
+    int c; cin >> c; clearInput();
+    if (c == 1) {
+        cout << FIELD_ID << ": "; int id; cin >> id; clearInput();
         searchById(id);
-    } else if (choice == 2) {
-        cout << "Enter " << FIELD_NAME << ": ";
-        string name;
-        getline(cin, name);
-        searchByName(trim(name));
-    } else {
-        cout << "Invalid choice." << endl;
+    } else if (c == 2) {
+        cout << FIELD_NAME << ": "; string n; getline(cin, n);
+        searchByName(trim(n));
     }
 }
 
-/**
- * Edit an existing entity
- */
 bool editItem(int id) {
-    int index = findItemIndexById(id);
-    if (index == -1) {
-        cout << ENTITY_NAME_SINGULAR << " with " << FIELD_ID << " " << id << " not found." << endl;
-        return false;
+    int idx = findById(id);
+    if (idx == -1) { cerr << ENTITY_SINGULAR << " not found." << endl; return false; }
+    Item& it = items[idx];
+    
+    cout << "\n=== Edit " << ENTITY_SINGULAR << " " << id << " ===" << endl;
+    displayHeader(); displayItem(it); printLine();
+    cout << "(Press Enter to keep current)\n";
+    
+    cout << FIELD_NAME << " [" << it.name << "]: ";
+    string s; getline(cin, s); s = trim(s);
+    if (!s.empty() && validateName(s)) it.name = s;
+    
+#if HAS_QUANTITY
+    cout << FIELD_QUANTITY << " [" << it.quantity << "]: ";
+    getline(cin, s); s = trim(s);
+    if (!s.empty() && isNumeric(s)) {
+        int q = stoi(s);
+        if (validateQty(q)) it.quantity = q;
     }
-    
-    Item& item = items[index];
-    
-    cout << "\n=== Edit " << ENTITY_NAME_SINGULAR << " (ID: " << id << ") ===" << endl;
-    cout << "Current values:" << endl;
-    displayTableHeader();
-    displayItem(item);
-    printSeparator();
-    
-    cout << "\nEnter new values (press Enter to keep current):" << endl;
-    
-    // Edit Name
-    cout << FIELD_NAME << " [" << item.name << "]: ";
-    string newName;
-    getline(cin, newName);
-    newName = trim(newName);
-    if (!newName.empty()) {
-        if (isValidName(newName)) {
-            item.name = newName;
-        }
+#endif
+
+#if HAS_DATE
+    cout << FIELD_DATE << " [" << it.date << "]: ";
+    getline(cin, s); s = trim(s);
+    if (!s.empty()) {
+        if (isValidDate(s)) it.date = s;
+        else cerr << "Invalid date, keeping original." << endl;
     }
-    
-    // Edit Quantity
-    cout << FIELD_QUANTITY << " [" << item.quantity << "]: ";
-    string qtyStr;
-    getline(cin, qtyStr);
-    qtyStr = trim(qtyStr);
-    if (!qtyStr.empty() && isNumeric(qtyStr)) {
-        int newQty = stoi(qtyStr);
-        if (isValidQuantity(newQty)) {
-            item.quantity = newQty;
-        }
-    }
-    
-    // Edit Date
-    cout << FIELD_DATE << " [" << item.date << "]: ";
-    string newDate;
-    getline(cin, newDate);
-    newDate = trim(newDate);
-    if (!newDate.empty()) {
-        if (isValidDate(newDate)) {
-            item.date = newDate;
-        } else {
-            cout << "Warning: Invalid date format, keeping original." << endl;
-        }
-    }
-    
-    cout << ENTITY_NAME_SINGULAR << " updated successfully." << endl;
+#endif
+
+#if AUTO_SORT
+    sortItems(DEFAULT_SORT_FIELD, true);
+#endif
+    cout << ENTITY_SINGULAR << " updated." << endl;
     return true;
 }
 
-/**
- * Edit item interactively
- */
-void editItemInteractive() {
-    cout << "Enter " << FIELD_ID << " of " << ENTITY_NAME_SINGULAR << " to edit: ";
-    int id;
-    if (!(cin >> id)) {
-        clearInputBuffer();
-        cout << "Invalid " << FIELD_ID << "." << endl;
-        return;
-    }
-    clearInputBuffer();
+void editInteractive() {
+    cout << FIELD_ID << " to edit: "; int id;
+    if (!(cin >> id)) { clearInput(); return; }
+    clearInput();
     editItem(id);
 }
 
-/**
- * Delete an entity
- */
 bool deleteItem(int id) {
-    int index = findItemIndexById(id);
-    if (index == -1) {
-        cout << ENTITY_NAME_SINGULAR << " with " << FIELD_ID << " " << id << " not found." << endl;
-        return false;
-    }
+    int idx = findById(id);
+    if (idx == -1) { cerr << ENTITY_SINGULAR << " not found." << endl; return false; }
     
-    // Confirm deletion
-    cout << "Are you sure you want to delete " << ENTITY_NAME_SINGULAR << " '" << items[index].name << "'? (y/n): ";
-    char confirm;
-    cin >> confirm;
-    clearInputBuffer();
+    cout << "Delete '" << items[idx].name << "'? (y/n): ";
+    char c; cin >> c; clearInput();
+    if (tolower(c) != 'y') { cout << "Cancelled." << endl; return false; }
     
-    if (tolower(confirm) != 'y') {
-        cout << "Deletion cancelled." << endl;
-        return false;
-    }
-    
-    // Remove connections in matrices
+#if ENABLE_GRAPH
+    // Clear connections
     for (int i = 0; i < MAX_ENTITIES; i++) {
-        adjacencyMatrix[index][i] = NO_CONNECTION;
-        adjacencyMatrix[i][index] = NO_CONNECTION;
-        weightMatrix[index][i] = NO_WEIGHT;
-        weightMatrix[i][index] = NO_WEIGHT;
+        adjMatrix[idx][i] = adjMatrix[i][idx] = NO_CONN;
+        weightMatrix[idx][i] = weightMatrix[i][idx] = NO_WEIGHT;
     }
-    
-    items.erase(items.begin() + index);
-    entityCount--;
-    
-    cout << ENTITY_NAME_SINGULAR << " deleted successfully." << endl;
+#endif
+    items.erase(items.begin() + idx);
+    cout << ENTITY_SINGULAR << " deleted." << endl;
     return true;
 }
 
-/**
- * Delete item interactively
- */
-void deleteItemInteractive() {
-    cout << "Enter " << FIELD_ID << " of " << ENTITY_NAME_SINGULAR << " to delete: ";
-    int id;
-    if (!(cin >> id)) {
-        clearInputBuffer();
-        cout << "Invalid " << FIELD_ID << "." << endl;
-        return;
-    }
-    clearInputBuffer();
+void deleteInteractive() {
+    cout << FIELD_ID << " to delete: "; int id;
+    if (!(cin >> id)) { clearInput(); return; }
+    clearInput();
     deleteItem(id);
 }
 
-// =============================================================================
-// GRAPH / RELATION FUNCTIONS
-// =============================================================================
+// ===========================================================================
+// GRAPH FUNCTIONS
+// ===========================================================================
+#if ENABLE_GRAPH
 
-/**
- * Add a connection between two entities (by index)
- */
-bool addConnectionByIndex(int from, int to, bool bidirectional = true) {
-    if (from < 0 || from >= (int)items.size() || to < 0 || to >= (int)items.size()) {
-        cout << "Error: Invalid entity indices." << endl;
-        return false;
-    }
+void initGraph() {
+    for (int i = 0; i < MAX_ENTITIES; i++)
+        for (int j = 0; j < MAX_ENTITIES; j++) {
+            adjMatrix[i][j] = NO_CONN;
+            weightMatrix[i][j] = NO_WEIGHT;
+        }
+}
+
+bool addConnection(int fromId, int toId) {
+    int fi = findById(fromId), ti = findById(toId);
+    if (fi == -1 || ti == -1) { cerr << "Error: " << ENTITY_SINGULAR << " not found." << endl; return false; }
+    if (fi == ti) { cerr << "Error: Cannot self-connect." << endl; return false; }
     
-    if (from == to) {
-        cout << "Error: Cannot create self-connection." << endl;
-        return false;
-    }
-    
-    adjacencyMatrix[from][to] = 1;
-    if (bidirectional) {
-        adjacencyMatrix[to][from] = 1;
-    }
-    
-    cout << RELATION_NAME << " added between '" << items[from].name << "' and '" << items[to].name << "'." << endl;
+    adjMatrix[fi][ti] = 1;
+#if GRAPH_UNDIRECTED
+    adjMatrix[ti][fi] = 1;
+#endif
+    cout << RELATION_NAME << " added: " << items[fi].name << " -> " << items[ti].name << endl;
     return true;
 }
 
-/**
- * Add a connection between two entities (by ID)
- */
-bool addConnection(int fromId, int toId, bool bidirectional = true) {
-    int fromIndex = findItemIndexById(fromId);
-    int toIndex = findItemIndexById(toId);
-    
-    if (fromIndex == -1) {
-        cout << "Error: " << ENTITY_NAME_SINGULAR << " with " << FIELD_ID << " " << fromId << " not found." << endl;
-        return false;
-    }
-    if (toIndex == -1) {
-        cout << "Error: " << ENTITY_NAME_SINGULAR << " with " << FIELD_ID << " " << toId << " not found." << endl;
-        return false;
-    }
-    
-    return addConnectionByIndex(fromIndex, toIndex, bidirectional);
-}
-
-/**
- * Add connection interactively
- */
 void addConnectionInteractive() {
     cout << "\n=== Add " << RELATION_NAME << " ===" << endl;
-    
-    int fromId, toId;
-    cout << "From " << FIELD_ID << ": ";
-    if (!(cin >> fromId)) {
-        clearInputBuffer();
-        cout << "Invalid " << FIELD_ID << "." << endl;
-        return;
-    }
-    
-    cout << "To " << FIELD_ID << ": ";
-    if (!(cin >> toId)) {
-        clearInputBuffer();
-        cout << "Invalid " << FIELD_ID << "." << endl;
-        return;
-    }
-    clearInputBuffer();
-    
-    cout << "Bidirectional? (y/n): ";
-    char bidir;
-    cin >> bidir;
-    clearInputBuffer();
-    
-    addConnection(fromId, toId, tolower(bidir) == 'y');
+    int from, to;
+    cout << "From " << FIELD_ID << ": "; cin >> from;
+    cout << "To " << FIELD_ID << ": "; cin >> to;
+    clearInput();
+    addConnection(from, to);
 }
 
-/**
- * Set weight for a connection (by index)
- */
-bool setWeightByIndex(int from, int to, int weight, bool bidirectional = true) {
-    if (from < 0 || from >= (int)items.size() || to < 0 || to >= (int)items.size()) {
-        cout << "Error: Invalid entity indices." << endl;
-        return false;
+bool setWeight(int fromId, int toId, int w) {
+    int fi = findById(fromId), ti = findById(toId);
+    if (fi == -1 || ti == -1) { cerr << "Error: " << ENTITY_SINGULAR << " not found." << endl; return false; }
+    
+    if (adjMatrix[fi][ti] == NO_CONN) {
+        cout << "Creating connection first..." << endl;
+        addConnection(fromId, toId);
     }
     
-    // Ensure connection exists
-    if (adjacencyMatrix[from][to] == NO_CONNECTION) {
-        cout << "Warning: No connection exists. Creating connection first." << endl;
-        addConnectionByIndex(from, to, bidirectional);
-    }
-    
-    weightMatrix[from][to] = weight;
-    if (bidirectional) {
-        weightMatrix[to][from] = weight;
-    }
-    
-    cout << "Weight " << weight << " set for " << RELATION_NAME << " between '" 
-         << items[from].name << "' and '" << items[to].name << "'." << endl;
+    weightMatrix[fi][ti] = w;
+#if GRAPH_UNDIRECTED
+    weightMatrix[ti][fi] = w;
+#endif
+    cout << "Weight " << w << " set." << endl;
     return true;
 }
 
-/**
- * Set weight for a connection (by ID)
- */
-bool setWeight(int fromId, int toId, int weight, bool bidirectional = true) {
-    int fromIndex = findItemIndexById(fromId);
-    int toIndex = findItemIndexById(toId);
-    
-    if (fromIndex == -1 || toIndex == -1) {
-        cout << "Error: One or both " << ENTITY_NAME_PLURAL << " not found." << endl;
-        return false;
-    }
-    
-    return setWeightByIndex(fromIndex, toIndex, weight, bidirectional);
-}
-
-/**
- * Set weight interactively
- */
 void setWeightInteractive() {
-    cout << "\n=== Set " << RELATION_NAME << " Weight ===" << endl;
-    
-    int fromId, toId, weight;
-    cout << "From " << FIELD_ID << ": ";
-    if (!(cin >> fromId)) {
-        clearInputBuffer();
-        cout << "Invalid " << FIELD_ID << "." << endl;
-        return;
-    }
-    
-    cout << "To " << FIELD_ID << ": ";
-    if (!(cin >> toId)) {
-        clearInputBuffer();
-        cout << "Invalid " << FIELD_ID << "." << endl;
-        return;
-    }
-    
-    cout << "Weight/Cost: ";
-    if (!(cin >> weight)) {
-        clearInputBuffer();
-        cout << "Invalid weight." << endl;
-        return;
-    }
-    clearInputBuffer();
-    
-    setWeight(fromId, toId, weight);
+    cout << "\n=== Set Weight ===" << endl;
+    int from, to, w;
+    cout << "From " << FIELD_ID << ": "; cin >> from;
+    cout << "To " << FIELD_ID << ": "; cin >> to;
+    cout << "Weight: "; cin >> w;
+    clearInput();
+    setWeight(from, to, w);
 }
 
-/**
- * Remove a connection
- */
-bool removeConnection(int fromId, int toId, bool bidirectional = true) {
-    int fromIndex = findItemIndexById(fromId);
-    int toIndex = findItemIndexById(toId);
-    
-    if (fromIndex == -1 || toIndex == -1) {
-        cout << "Error: One or both " << ENTITY_NAME_PLURAL << " not found." << endl;
-        return false;
-    }
-    
-    adjacencyMatrix[fromIndex][toIndex] = NO_CONNECTION;
-    weightMatrix[fromIndex][toIndex] = NO_WEIGHT;
-    
-    if (bidirectional) {
-        adjacencyMatrix[toIndex][fromIndex] = NO_CONNECTION;
-        weightMatrix[toIndex][fromIndex] = NO_WEIGHT;
-    }
-    
-    cout << RELATION_NAME << " removed." << endl;
-    return true;
-}
-
-/**
- * Display adjacency matrix
- */
-void displayAdjacencyMatrix() {
-    if (items.empty()) {
-        cout << "No " << ENTITY_NAME_PLURAL << " to display." << endl;
-        return;
-    }
-    
+void displayAdjMatrix() {
+    if (items.empty()) { cout << "No data." << endl; return; }
     int n = items.size();
-    
-    cout << "\n=== Adjacency Matrix (" << RELATION_NAME << "s) ===" << endl;
-    
-    // Header row with IDs
-    cout << setw(MATRIX_CELL_WIDTH) << " ";
-    for (int i = 0; i < n; i++) {
-        cout << setw(MATRIX_CELL_WIDTH) << items[i].id;
-    }
+    cout << "\n=== Adjacency Matrix ===" << endl;
+    cout << setw(COL_MATRIX) << " ";
+    for (int i = 0; i < n; i++) cout << setw(COL_MATRIX) << items[i].id;
     cout << endl;
-    
-    // Matrix rows
     for (int i = 0; i < n; i++) {
-        cout << setw(MATRIX_CELL_WIDTH) << items[i].id;
-        for (int j = 0; j < n; j++) {
-            cout << setw(MATRIX_CELL_WIDTH) << adjacencyMatrix[i][j];
-        }
+        cout << setw(COL_MATRIX) << items[i].id;
+        for (int j = 0; j < n; j++) cout << setw(COL_MATRIX) << adjMatrix[i][j];
         cout << endl;
     }
-    cout << endl;
 }
 
-/**
- * Display weight matrix
- */
 void displayWeightMatrix() {
-    if (items.empty()) {
-        cout << "No " << ENTITY_NAME_PLURAL << " to display." << endl;
-        return;
-    }
-    
+    if (items.empty()) { cout << "No data." << endl; return; }
     int n = items.size();
-    
-    cout << "\n=== Weight Matrix (" << RELATION_NAME << " Costs) ===" << endl;
-    
-    // Header row with IDs
-    cout << setw(MATRIX_CELL_WIDTH + 2) << " ";
-    for (int i = 0; i < n; i++) {
-        cout << setw(MATRIX_CELL_WIDTH + 2) << items[i].id;
-    }
+    cout << "\n=== Weight Matrix ===" << endl;
+    cout << setw(COL_MATRIX) << " ";
+    for (int i = 0; i < n; i++) cout << setw(COL_MATRIX) << items[i].id;
     cout << endl;
-    
-    // Matrix rows
     for (int i = 0; i < n; i++) {
-        cout << setw(MATRIX_CELL_WIDTH + 2) << items[i].id;
+        cout << setw(COL_MATRIX) << items[i].id;
         for (int j = 0; j < n; j++) {
-            if (weightMatrix[i][j] == NO_WEIGHT) {
-                cout << setw(MATRIX_CELL_WIDTH + 2) << "-";
-            } else {
-                cout << setw(MATRIX_CELL_WIDTH + 2) << weightMatrix[i][j];
-            }
+            if (weightMatrix[i][j] == NO_WEIGHT) cout << setw(COL_MATRIX) << "-";
+            else cout << setw(COL_MATRIX) << weightMatrix[i][j];
         }
         cout << endl;
     }
-    cout << endl;
 }
 
-/**
- * List all connections for an entity
- */
 void listConnections(int id) {
-    int index = findItemIndexById(id);
-    if (index == -1) {
-        cout << ENTITY_NAME_SINGULAR << " with " << FIELD_ID << " " << id << " not found." << endl;
-        return;
-    }
-    
-    cout << "\n" << RELATION_NAME << "s for '" << items[index].name << "' (ID: " << id << "):" << endl;
-    
-    bool hasConnections = false;
+    int idx = findById(id);
+    if (idx == -1) { cout << ENTITY_SINGULAR << " not found." << endl; return; }
+    cout << "\n" << RELATION_NAME << "s for " << items[idx].name << ":" << endl;
+    bool found = false;
     for (size_t i = 0; i < items.size(); i++) {
-        if (adjacencyMatrix[index][i] == 1) {
-            cout << "  -> " << items[i].name << " (ID: " << items[i].id << ")";
-            if (weightMatrix[index][i] != NO_WEIGHT) {
-                cout << " [Weight: " << weightMatrix[index][i] << "]";
-            }
+        if (adjMatrix[idx][i] == 1) {
+            cout << "  -> " << items[i].name;
+            if (weightMatrix[idx][i] != NO_WEIGHT) cout << " [" << weightMatrix[idx][i] << "]";
             cout << endl;
-            hasConnections = true;
+            found = true;
         }
     }
-    
-    if (!hasConnections) {
-        cout << "  No " << RELATION_NAME << "s found." << endl;
-    }
+    if (!found) cout << "  None" << endl;
 }
 
-// =============================================================================
-// FILE I/O FUNCTIONS
-// =============================================================================
+#endif // ENABLE_GRAPH
 
-/**
- * Save entities to CSV file
- * Format: id,name,quantity,date
- */
-bool saveEntitiesToFile(const string& filename = ENTITIES_FILE) {
-    ofstream file(filename);
-    if (!file.is_open()) {
-        cout << "Error: Could not open file '" << filename << "' for writing." << endl;
-        return false;
+// ===========================================================================
+// FILE I/O
+// ===========================================================================
+bool saveItems(const string& fn = FILE_ITEMS) {
+    ofstream f(fn);
+    if (!f) { cerr << "Error: Cannot write " << fn << endl; return false; }
+    
+    // Header
+    f << FIELD_ID << "," << FIELD_NAME;
+#if HAS_QUANTITY
+    f << "," << FIELD_QUANTITY;
+#endif
+#if HAS_DATE
+    f << "," << FIELD_DATE;
+#endif
+    f << endl;
+    
+    // Data
+    for (const auto& it : items) {
+        f << it.id << "," << it.name;
+#if HAS_QUANTITY
+        f << "," << it.quantity;
+#endif
+#if HAS_DATE
+        f << "," << it.date;
+#endif
+        f << endl;
     }
-    
-    // Write header
-    file << FIELD_ID << "," << FIELD_NAME << "," << FIELD_QUANTITY << "," << FIELD_DATE << endl;
-    
-    // Write data
-    for (const auto& item : items) {
-        file << item.id << "," << item.name << "," << item.quantity << "," << item.date << endl;
-    }
-    
-    file.close();
-    cout << items.size() << " " << ENTITY_NAME_PLURAL << " saved to '" << filename << "'." << endl;
+    f.close();
+    cout << items.size() << " " << ENTITY_PLURAL << " saved to " << fn << endl;
     return true;
 }
 
-/**
- * Load entities from CSV file
- */
-bool loadEntitiesFromFile(const string& filename = ENTITIES_FILE) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cout << "Note: File '" << filename << "' not found. Starting with empty data." << endl;
-        return false;
-    }
+bool loadItems(const string& fn = FILE_ITEMS) {
+    ifstream f(fn);
+    if (!f) { cout << "Note: " << fn << " not found." << endl; return false; }
     
     items.clear();
     string line;
     int lineNum = 0;
     
-    while (getline(file, line)) {
+    while (getline(f, line)) {
         lineNum++;
-        
-        // Skip header
-        if (lineNum == 1) continue;
-        
-        // Skip empty lines
+        if (lineNum == 1) continue; // Skip header
         if (trim(line).empty()) continue;
         
-        // Parse CSV line
         stringstream ss(line);
-        string idStr, name, qtyStr, date;
+        string tok;
         
-        if (!getline(ss, idStr, ',')) continue;
-        if (!getline(ss, name, ',')) continue;
-        if (!getline(ss, qtyStr, ',')) continue;
-        if (!getline(ss, date, ',')) date = trim(date);
+        if (!getline(ss, tok, ',')) continue;
+        int id = stoi(trim(tok));
         
-        // Remove trailing newline/whitespace from date
-        date = trim(date);
+        if (!getline(ss, tok, ',')) continue;
+        string name = trim(tok);
         
-        try {
-            int id = stoi(trim(idStr));
-            int qty = stoi(trim(qtyStr));
-            items.push_back(Item(id, trim(name), qty, date));
-        } catch (...) {
-            cout << "Warning: Skipping invalid line " << lineNum << " in '" << filename << "'." << endl;
-        }
+        int qty = 0;
+#if HAS_QUANTITY
+        if (getline(ss, tok, ',')) qty = stoi(trim(tok));
+#endif
+        
+        string date = "";
+#if HAS_DATE
+        if (getline(ss, tok, ',')) date = trim(tok);
+        else if (getline(ss, tok)) date = trim(tok);
+#endif
+        
+        items.push_back(Item(id, name, qty, date));
     }
-    
-    file.close();
-    entityCount = items.size();
-    cout << items.size() << " " << ENTITY_NAME_PLURAL << " loaded from '" << filename << "'." << endl;
+    f.close();
+    cout << items.size() << " " << ENTITY_PLURAL << " loaded from " << fn << endl;
     return true;
 }
 
-/**
- * Save adjacency matrix to file
- * Format: First line = number of entities, then matrix rows
- */
-bool saveRelationsToFile(const string& filename = RELATIONS_FILE) {
-    ofstream file(filename);
-    if (!file.is_open()) {
-        cout << "Error: Could not open file '" << filename << "' for writing." << endl;
-        return false;
-    }
-    
+#if ENABLE_GRAPH
+bool saveGraph(const string& adjFn = FILE_CONNECTIONS, const string& wFn = FILE_WEIGHTS) {
     int n = items.size();
     
-    // Write header with entity IDs
-    file << n << endl;
+    // Save adjacency
+    ofstream fa(adjFn);
+    if (!fa) { cerr << "Error: Cannot write " << adjFn << endl; return false; }
+    fa << n << endl;
+    for (int i = 0; i < n; i++) fa << (i ? "," : "") << items[i].id;
+    fa << endl;
     for (int i = 0; i < n; i++) {
-        file << items[i].id;
-        if (i < n - 1) file << ",";
+        for (int j = 0; j < n; j++) fa << (j ? "," : "") << adjMatrix[i][j];
+        fa << endl;
     }
-    file << endl;
+    fa.close();
     
-    // Write matrix
+    // Save weights
+    ofstream fw(wFn);
+    if (!fw) { cerr << "Error: Cannot write " << wFn << endl; return false; }
+    fw << n << endl;
+    for (int i = 0; i < n; i++) fw << (i ? "," : "") << items[i].id;
+    fw << endl;
     for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            file << adjacencyMatrix[i][j];
-            if (j < n - 1) file << ",";
-        }
-        file << endl;
+        for (int j = 0; j < n; j++) fw << (j ? "," : "") << weightMatrix[i][j];
+        fw << endl;
     }
+    fw.close();
     
-    file.close();
-    cout << "Adjacency matrix saved to '" << filename << "'." << endl;
+    cout << "Graph saved." << endl;
     return true;
 }
 
-/**
- * Load adjacency matrix from file
- */
-bool loadRelationsFromFile(const string& filename = RELATIONS_FILE) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cout << "Note: File '" << filename << "' not found." << endl;
-        return false;
-    }
-    
-    string line;
-    int n = 0;
-    
-    // Read number of entities
-    if (getline(file, line)) {
-        n = stoi(trim(line));
-    }
-    
-    // Skip ID line
-    getline(file, line);
-    
-    // Read matrix
-    for (int i = 0; i < n && getline(file, line); i++) {
-        stringstream ss(line);
-        string val;
-        int j = 0;
-        while (getline(ss, val, ',') && j < n) {
-            adjacencyMatrix[i][j] = stoi(trim(val));
-            j++;
+bool loadGraph(const string& adjFn = FILE_CONNECTIONS, const string& wFn = FILE_WEIGHTS) {
+    // Load adjacency
+    ifstream fa(adjFn);
+    if (fa) {
+        string line;
+        int n = 0;
+        if (getline(fa, line)) n = stoi(trim(line));
+        getline(fa, line); // Skip IDs
+        for (int i = 0; i < n && getline(fa, line); i++) {
+            stringstream ss(line);
+            string v;
+            for (int j = 0; j < n && getline(ss, v, ','); j++)
+                adjMatrix[i][j] = stoi(trim(v));
         }
+        fa.close();
+        cout << "Adjacency loaded from " << adjFn << endl;
+    } else {
+        cout << "Note: " << adjFn << " not found." << endl;
     }
     
-    file.close();
-    cout << "Adjacency matrix loaded from '" << filename << "'." << endl;
+    // Load weights
+    ifstream fw(wFn);
+    if (fw) {
+        string line;
+        int n = 0;
+        if (getline(fw, line)) n = stoi(trim(line));
+        getline(fw, line); // Skip IDs
+        for (int i = 0; i < n && getline(fw, line); i++) {
+            stringstream ss(line);
+            string v;
+            for (int j = 0; j < n && getline(ss, v, ','); j++)
+                weightMatrix[i][j] = stoi(trim(v));
+        }
+        fw.close();
+        cout << "Weights loaded from " << wFn << endl;
+    } else {
+        cout << "Note: " << wFn << " not found." << endl;
+    }
     return true;
 }
+#endif
 
-/**
- * Save weight matrix to file
- */
-bool saveWeightsToFile(const string& filename = WEIGHTS_FILE) {
-    ofstream file(filename);
-    if (!file.is_open()) {
-        cout << "Error: Could not open file '" << filename << "' for writing." << endl;
-        return false;
-    }
-    
-    int n = items.size();
-    
-    // Write header
-    file << n << endl;
-    for (int i = 0; i < n; i++) {
-        file << items[i].id;
-        if (i < n - 1) file << ",";
-    }
-    file << endl;
-    
-    // Write matrix
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            file << weightMatrix[i][j];
-            if (j < n - 1) file << ",";
-        }
-        file << endl;
-    }
-    
-    file.close();
-    cout << "Weight matrix saved to '" << filename << "'." << endl;
-    return true;
+void saveAll() {
+    saveItems();
+#if ENABLE_GRAPH
+    saveGraph();
+#endif
 }
 
-/**
- * Load weight matrix from file
- */
-bool loadWeightsFromFile(const string& filename = WEIGHTS_FILE) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cout << "Note: File '" << filename << "' not found." << endl;
-        return false;
-    }
-    
-    string line;
-    int n = 0;
-    
-    // Read number of entities
-    if (getline(file, line)) {
-        n = stoi(trim(line));
-    }
-    
-    // Skip ID line
-    getline(file, line);
-    
-    // Read matrix
-    for (int i = 0; i < n && getline(file, line); i++) {
-        stringstream ss(line);
-        string val;
-        int j = 0;
-        while (getline(ss, val, ',') && j < n) {
-            weightMatrix[i][j] = stoi(trim(val));
-            j++;
-        }
-    }
-    
-    file.close();
-    cout << "Weight matrix loaded from '" << filename << "'." << endl;
-    return true;
+void loadAll() {
+    loadItems();
+#if ENABLE_GRAPH
+    loadGraph();
+#endif
 }
 
-/**
- * Save all data to files
- */
-void saveAllData() {
-    saveEntitiesToFile();
-    saveRelationsToFile();
-    saveWeightsToFile();
+// ===========================================================================
+// SEED DATA (for testing)
+// ===========================================================================
+void seedData() {
+#if SEED_ON_START
+    if (!items.empty()) return;
+    cout << "Seeding sample data..." << endl;
+    addItem(1, "Alpha", 100, "2024-01-15");
+    addItem(2, "Beta", 200, "2024-02-20");
+    addItem(3, "Gamma", 150, "2024-03-10");
+#if ENABLE_GRAPH
+    addConnection(1, 2);
+    addConnection(2, 3);
+    setWeight(1, 2, 10);
+    setWeight(2, 3, 20);
+#endif
+#endif
 }
 
-/**
- * Load all data from files
- */
-void loadAllData() {
-    loadEntitiesFromFile();
-    loadRelationsFromFile();
-    loadWeightsFromFile();
+// ===========================================================================
+// HELP
+// ===========================================================================
+#ifdef USE_COMMAND_MODE
+void showHelp() {
+    cout << "\n=== Commands ===" << endl;
+    cout << left;
+    cout << setw(25) << CMD_PREFIX "add" << "Add " << ENTITY_SINGULAR << " interactively" << endl;
+    cout << setw(25) << CMD_PREFIX "list" << "List all " << ENTITY_PLURAL << endl;
+    cout << setw(25) << CMD_PREFIX "search" << "Search " << ENTITY_SINGULAR << endl;
+    cout << setw(25) << CMD_PREFIX "edit" << "Edit " << ENTITY_SINGULAR << endl;
+    cout << setw(25) << CMD_PREFIX "delete" << "Delete " << ENTITY_SINGULAR << endl;
+    cout << setw(25) << CMD_PREFIX "sort <0-3>" << "Sort (0=ID,1=Name,2=Qty,3=Date)" << endl;
+#if ENABLE_GRAPH
+    cout << setw(25) << "connect" << "Add " << RELATION_NAME << endl;
+    cout << setw(25) << "weight" << "Set " << RELATION_NAME << " weight" << endl;
+    cout << setw(25) << "adj" << "Show adjacency matrix" << endl;
+    cout << setw(25) << "weights" << "Show weight matrix" << endl;
+    cout << setw(25) << "links <id>" << "Show " << RELATION_NAME << "s for " << ENTITY_SINGULAR << endl;
+#endif
+    cout << setw(25) << "save" << "Save to files" << endl;
+    cout << setw(25) << "load" << "Load from files" << endl;
+    cout << setw(25) << "help" << "Show this help" << endl;
+    cout << setw(25) << "exit" << "Exit program" << endl;
 }
+#endif
 
-// =============================================================================
-// HELP AND DISPLAY FUNCTIONS
-// =============================================================================
-
-/**
- * Display help for command-line style
- */
-void displayCommandHelp() {
-    cout << "\n=== Available Commands ===" << endl;
-    cout << left << setw(30) << COMMAND_PREFIX "add <id> <name> <qty> <date>" << "Add new " << ENTITY_NAME_SINGULAR << endl;
-    cout << left << setw(30) << COMMAND_PREFIX "addinteractive" << "Add " << ENTITY_NAME_SINGULAR << " interactively" << endl;
-    cout << left << setw(30) << COMMAND_PREFIX "slist" << "List all " << ENTITY_NAME_PLURAL << endl;
-    cout << left << setw(30) << COMMAND_PREFIX "search <id|name>" << "Search " << ENTITY_NAME_SINGULAR << endl;
-    cout << left << setw(30) << COMMAND_PREFIX "edit <id>" << "Edit " << ENTITY_NAME_SINGULAR << endl;
-    cout << left << setw(30) << COMMAND_PREFIX "delete <id>" << "Delete " << ENTITY_NAME_SINGULAR << endl;
-    cout << left << setw(30) << COMMAND_PREFIX "sort <0-3>" << "Sort (0=ID, 1=Name, 2=Qty, 3=Date)" << endl;
-    cout << left << setw(30) << "connect <from_id> <to_id>" << "Add " << RELATION_NAME << endl;
-    cout << left << setw(30) << "weight <from_id> <to_id> <w>" << "Set " << RELATION_NAME << " weight" << endl;
-    cout << left << setw(30) << "adjmatrix" << "Display adjacency matrix" << endl;
-    cout << left << setw(30) << "weightmatrix" << "Display weight matrix" << endl;
-    cout << left << setw(30) << "connections <id>" << "List " << RELATION_NAME << "s for " << ENTITY_NAME_SINGULAR << endl;
-    cout << left << setw(30) << "save" << "Save all data to files" << endl;
-    cout << left << setw(30) << "load" << "Load all data from files" << endl;
-    cout << left << setw(30) << "help" << "Show this help" << endl;
-    cout << left << setw(30) << "exit" << "Exit program" << endl;
-    cout << endl;
-}
-
-/**
- * Display menu for menu style
- */
-void displayMenu() {
-    cout << "\n========================================" << endl;
-    cout << "    " << ENTITY_NAME_SINGULAR << " Management System" << endl;
-    cout << "========================================" << endl;
-    cout << "1. Add " << ENTITY_NAME_SINGULAR << endl;
-    cout << "2. List " << ENTITY_NAME_PLURAL << endl;
-    cout << "3. Search " << ENTITY_NAME_SINGULAR << endl;
-    cout << "4. Edit " << ENTITY_NAME_SINGULAR << endl;
-    cout << "5. Delete " << ENTITY_NAME_SINGULAR << endl;
-    cout << "6. Add " << RELATION_NAME << endl;
-    cout << "7. Set " << RELATION_NAME << " Weight" << endl;
-    cout << "8. Display Matrices" << endl;
-    cout << "9. Save/Load Data" << endl;
-    cout << "0. Exit" << endl;
-    cout << "----------------------------------------" << endl;
-    cout << "Enter choice: ";
-}
-
-/**
- * Display sub-menu for matrices
- */
-void displayMatricesSubMenu() {
-    cout << "\n--- Matrix Display ---" << endl;
-    cout << "1. Adjacency Matrix" << endl;
-    cout << "2. Weight Matrix" << endl;
-    cout << "3. Both Matrices" << endl;
-    cout << "4. List " << RELATION_NAME << "s for " << ENTITY_NAME_SINGULAR << endl;
-    cout << "0. Back" << endl;
-    cout << "Choice: ";
-}
-
-/**
- * Display sub-menu for save/load
- */
-void displaySaveLoadSubMenu() {
-    cout << "\n--- Save/Load Data ---" << endl;
-    cout << "1. Save All" << endl;
-    cout << "2. Load All" << endl;
-    cout << "3. Save " << ENTITY_NAME_PLURAL << " Only" << endl;
-    cout << "4. Load " << ENTITY_NAME_PLURAL << " Only" << endl;
-    cout << "0. Back" << endl;
-    cout << "Choice: ";
-}
-
-// =============================================================================
-// COMMAND PARSER (Command-line style)
-// =============================================================================
-
-#ifdef USE_COMMAND_STYLE
-
-/**
- * Parse and execute command
- */
-bool parseCommand(const string& input) {
-    string cmd = trim(input);
+// ===========================================================================
+// COMMAND MODE
+// ===========================================================================
+#ifdef USE_COMMAND_MODE
+bool processCommand(const string& input) {
+    string cmd = toLower(trim(input));
     if (cmd.empty()) return true;
     
-    // Tokenize input
-    vector<string> tokens;
+    // Parse command and args
     stringstream ss(cmd);
-    string token;
-    while (ss >> token) {
-        tokens.push_back(token);
-    }
+    string c; ss >> c;
     
-    if (tokens.empty()) return true;
+    if (c == "exit" || c == "quit" || c == "q") return false;
+    if (c == "help" || c == "?") { showHelp(); return true; }
     
-    string command = toLower(tokens[0]);
+    if (c == CMD_PREFIX "add" || c == "add") { addItemInteractive(); return true; }
+    if (c == CMD_PREFIX "list" || c == "list" || c == "ls") { listItems(); return true; }
+    if (c == CMD_PREFIX "search" || c == "search" || c == "find") { searchInteractive(); return true; }
+    if (c == CMD_PREFIX "edit" || c == "edit") { editInteractive(); return true; }
+    if (c == CMD_PREFIX "delete" || c == "delete" || c == "del" || c == "rm") { deleteInteractive(); return true; }
     
-    // Exit command
-    if (command == "exit" || command == "quit" || command == "q") {
-        return false;
-    }
-    
-    // Help command
-    if (command == "help" || command == "?") {
-        displayCommandHelp();
+    if (c == CMD_PREFIX "sort" || c == "sort") {
+        int f = DEFAULT_SORT_FIELD;
+        ss >> f;
+        sortItems(f);
+        listItems();
         return true;
     }
     
-    // Add command: itemadd <id> <name> <qty> <date>
-    if (command == COMMAND_PREFIX "add") {
-        if (tokens.size() < 5) {
-            cout << "Usage: " << COMMAND_PREFIX << "add <id> <name> <quantity> <date>" << endl;
-            return true;
-        }
-        try {
-            int id = stoi(tokens[1]);
-            string name = tokens[2];
-            int qty = stoi(tokens[3]);
-            string date = tokens[4];
-            addItem(id, name, qty, date);
-        } catch (...) {
-            cout << "Error: Invalid arguments." << endl;
-        }
+#if ENABLE_GRAPH
+    if (c == "connect" || c == "link") { addConnectionInteractive(); return true; }
+    if (c == "weight" || c == "setweight") { setWeightInteractive(); return true; }
+    if (c == "adj" || c == "adjmatrix" || c == "matrix") { displayAdjMatrix(); return true; }
+    if (c == "weights" || c == "weightmatrix") { displayWeightMatrix(); return true; }
+    if (c == "links" || c == "connections") {
+        int id; ss >> id;
+        if (id > 0) listConnections(id);
+        else { cout << FIELD_ID << ": "; cin >> id; clearInput(); listConnections(id); }
         return true;
     }
+#endif
     
-    // Add interactive
-    if (command == COMMAND_PREFIX "addinteractive" || command == COMMAND_PREFIX "addi") {
-        addItemInteractive();
-        return true;
-    }
+    if (c == "save") { saveAll(); return true; }
+    if (c == "load") { loadAll(); return true; }
     
-    // List command
-    if (command == COMMAND_PREFIX "slist" || command == COMMAND_PREFIX "list" || command == "list") {
-        int sortField = DEFAULT_SORT_FIELD;
-        if (tokens.size() > 1) {
-            try {
-                sortField = stoi(tokens[1]);
-            } catch (...) {}
-        }
-        listItems(true, sortField);
-        return true;
-    }
-    
-    // Search command
-    if (command == COMMAND_PREFIX "search" || command == "search") {
-        if (tokens.size() < 2) {
-            searchItemInteractive();
-        } else {
-            // Try as ID first
-            try {
-                int id = stoi(tokens[1]);
-                searchById(id);
-            } catch (...) {
-                // Search by name
-                searchByName(tokens[1]);
-            }
-        }
-        return true;
-    }
-    
-    // Edit command
-    if (command == COMMAND_PREFIX "edit" || command == "edit") {
-        if (tokens.size() < 2) {
-            editItemInteractive();
-        } else {
-            try {
-                int id = stoi(tokens[1]);
-                editItem(id);
-            } catch (...) {
-                cout << "Error: Invalid " << FIELD_ID << "." << endl;
-            }
-        }
-        return true;
-    }
-    
-    // Delete command
-    if (command == COMMAND_PREFIX "delete" || command == "delete") {
-        if (tokens.size() < 2) {
-            deleteItemInteractive();
-        } else {
-            try {
-                int id = stoi(tokens[1]);
-                deleteItem(id);
-            } catch (...) {
-                cout << "Error: Invalid " << FIELD_ID << "." << endl;
-            }
-        }
-        return true;
-    }
-    
-    // Sort command
-    if (command == COMMAND_PREFIX "sort" || command == "sort") {
-        int field = DEFAULT_SORT_FIELD;
-        if (tokens.size() > 1) {
-            try {
-                field = stoi(tokens[1]);
-            } catch (...) {}
-        }
-        sortItems(field);
-        listItems(false);
-        return true;
-    }
-    
-    // Connect command
-    if (command == "connect" || command == "link" || command == "addconnection") {
-        if (tokens.size() < 3) {
-            addConnectionInteractive();
-        } else {
-            try {
-                int from = stoi(tokens[1]);
-                int to = stoi(tokens[2]);
-                addConnection(from, to);
-            } catch (...) {
-                cout << "Error: Invalid arguments." << endl;
-            }
-        }
-        return true;
-    }
-    
-    // Weight command
-    if (command == "weight" || command == "setweight") {
-        if (tokens.size() < 4) {
-            setWeightInteractive();
-        } else {
-            try {
-                int from = stoi(tokens[1]);
-                int to = stoi(tokens[2]);
-                int w = stoi(tokens[3]);
-                setWeight(from, to, w);
-            } catch (...) {
-                cout << "Error: Invalid arguments." << endl;
-            }
-        }
-        return true;
-    }
-    
-    // Adjacency matrix
-    if (command == "adjmatrix" || command == "adj" || command == "matrix") {
-        displayAdjacencyMatrix();
-        return true;
-    }
-    
-    // Weight matrix
-    if (command == "weightmatrix" || command == "weights") {
-        displayWeightMatrix();
-        return true;
-    }
-    
-    // Connections for entity
-    if (command == "connections" || command == "links") {
-        if (tokens.size() < 2) {
-            cout << "Enter " << FIELD_ID << ": ";
-            int id;
-            if (cin >> id) {
-                clearInputBuffer();
-                listConnections(id);
-            }
-        } else {
-            try {
-                int id = stoi(tokens[1]);
-                listConnections(id);
-            } catch (...) {
-                cout << "Error: Invalid " << FIELD_ID << "." << endl;
-            }
-        }
-        return true;
-    }
-    
-    // Save command
-    if (command == "save") {
-        saveAllData();
-        return true;
-    }
-    
-    // Load command
-    if (command == "load") {
-        loadAllData();
-        return true;
-    }
-    
-    // Unknown command
-    cout << "Unknown command: '" << tokens[0] << "'. Type 'help' for available commands." << endl;
+    cerr << "Unknown command: " << c << ". Type 'help' for commands." << endl;
     return true;
 }
 
-/**
- * Command-line style main loop
- */
-void runCommandLoop() {
+void runCommandMode() {
     cout << "\n========================================" << endl;
-    cout << "  " << ENTITY_NAME_SINGULAR << " Management System" << endl;
-    cout << "  (Command-line Mode)" << endl;
+    cout << "  " << ENTITY_SINGULAR << " Management System" << endl;
+    cout << "  (Command Mode - type 'help')" << endl;
     cout << "========================================" << endl;
-    cout << "Type 'help' for available commands." << endl;
     
     string input;
-    bool running = true;
-    
-    while (running) {
+    while (true) {
         cout << "\n> ";
-        getline(cin, input);
-        running = parseCommand(input);
+        if (!getline(cin, input)) break;
+        if (!processCommand(input)) break;
     }
-    
     cout << "Goodbye!" << endl;
 }
+#endif
 
-#endif // USE_COMMAND_STYLE
+// ===========================================================================
+// MENU MODE
+// ===========================================================================
+#ifdef USE_MENU_MODE
+void showMenu() {
+    cout << "\n========================================" << endl;
+    cout << "  " << ENTITY_SINGULAR << " Management System" << endl;
+    cout << "========================================" << endl;
+    cout << "1. Add " << ENTITY_SINGULAR << endl;
+    cout << "2. List " << ENTITY_PLURAL << endl;
+    cout << "3. Search " << ENTITY_SINGULAR << endl;
+    cout << "4. Edit " << ENTITY_SINGULAR << endl;
+    cout << "5. Delete " << ENTITY_SINGULAR << endl;
+#if ENABLE_GRAPH
+    cout << "6. Add " << RELATION_NAME << endl;
+    cout << "7. Set Weight" << endl;
+    cout << "8. Show Matrices" << endl;
+#endif
+    cout << "9. Save/Load" << endl;
+    cout << "0. Exit" << endl;
+    cout << "----------------------------------------" << endl;
+    cout << "Choice: ";
+}
 
-// =============================================================================
-// MENU HANDLER (Menu style)
-// =============================================================================
+#if ENABLE_GRAPH
+void matrixSubMenu() {
+    cout << "\n1.Adjacency 2.Weights 3.Both 4.Links 0.Back: ";
+    int c; cin >> c; clearInput();
+    if (c == 1) displayAdjMatrix();
+    else if (c == 2) displayWeightMatrix();
+    else if (c == 3) { displayAdjMatrix(); displayWeightMatrix(); }
+    else if (c == 4) {
+        cout << FIELD_ID << ": "; int id; cin >> id; clearInput();
+        listConnections(id);
+    }
+}
+#endif
 
-#ifdef USE_MENU_STYLE
+void saveLoadSubMenu() {
+    cout << "\n1.Save All 2.Load All 0.Back: ";
+    int c; cin >> c; clearInput();
+    if (c == 1) saveAll();
+    else if (c == 2) loadAll();
+}
 
-/**
- * Handle matrices sub-menu
- */
-void handleMatricesMenu() {
+void runMenuMode() {
     int choice;
     do {
-        displayMatricesSubMenu();
-        if (!(cin >> choice)) {
-            clearInputBuffer();
-            continue;
-        }
-        clearInputBuffer();
+        showMenu();
+        if (!(cin >> choice)) { clearInput(); continue; }
+        clearInput();
         
         switch (choice) {
-            case 1:
-                displayAdjacencyMatrix();
-                break;
-            case 2:
-                displayWeightMatrix();
-                break;
-            case 3:
-                displayAdjacencyMatrix();
-                displayWeightMatrix();
-                break;
-            case 4: {
-                cout << "Enter " << FIELD_ID << ": ";
-                int id;
-                if (cin >> id) {
-                    clearInputBuffer();
-                    listConnections(id);
-                } else {
-                    clearInputBuffer();
-                }
-                break;
-            }
-            case 0:
-                break;
-            default:
-                cout << "Invalid choice." << endl;
+            case 1: addItemInteractive(); break;
+            case 2: listItems(); break;
+            case 3: searchInteractive(); break;
+            case 4: editInteractive(); break;
+            case 5: deleteInteractive(); break;
+#if ENABLE_GRAPH
+            case 6: addConnectionInteractive(); break;
+            case 7: setWeightInteractive(); break;
+            case 8: matrixSubMenu(); break;
+#endif
+            case 9: saveLoadSubMenu(); break;
+            case 0: cout << "Goodbye!" << endl; break;
+            default: cout << "Invalid choice." << endl;
         }
     } while (choice != 0);
 }
+#endif
 
-/**
- * Handle save/load sub-menu
- */
-void handleSaveLoadMenu() {
-    int choice;
-    do {
-        displaySaveLoadSubMenu();
-        if (!(cin >> choice)) {
-            clearInputBuffer();
-            continue;
-        }
-        clearInputBuffer();
-        
-        switch (choice) {
-            case 1:
-                saveAllData();
-                break;
-            case 2:
-                loadAllData();
-                break;
-            case 3:
-                saveEntitiesToFile();
-                break;
-            case 4:
-                loadEntitiesFromFile();
-                break;
-            case 0:
-                break;
-            default:
-                cout << "Invalid choice." << endl;
-        }
-    } while (choice != 0);
-}
-
-/**
- * Menu style main loop
- */
-void runMenuLoop() {
-    int choice;
-    
-    do {
-        displayMenu();
-        if (!(cin >> choice)) {
-            clearInputBuffer();
-            cout << "Invalid input. Please enter a number." << endl;
-            continue;
-        }
-        clearInputBuffer();
-        
-        switch (choice) {
-            case 1:
-                addItemInteractive();
-                break;
-            case 2:
-                listItems();
-                break;
-            case 3:
-                searchItemInteractive();
-                break;
-            case 4:
-                editItemInteractive();
-                break;
-            case 5:
-                deleteItemInteractive();
-                break;
-            case 6:
-                addConnectionInteractive();
-                break;
-            case 7:
-                setWeightInteractive();
-                break;
-            case 8:
-                handleMatricesMenu();
-                break;
-            case 9:
-                handleSaveLoadMenu();
-                break;
-            case 0:
-                cout << "Exiting..." << endl;
-                break;
-            default:
-                cout << "Invalid choice. Please try again." << endl;
-        }
-    } while (choice != 0);
-    
-    cout << "Goodbye!" << endl;
-}
-
-#endif // USE_MENU_STYLE
-
-// =============================================================================
-// MAIN FUNCTION
-// =============================================================================
-
+// ===========================================================================
+// MAIN
+// ===========================================================================
 int main() {
-    // Initialize matrices
-    initializeMatrices();
+#if ENABLE_GRAPH
+    initGraph();
+#endif
+    loadAll();
+    seedData();
     
-    // Load existing data from files
-    loadAllData();
-    
-    // Run the appropriate interaction style
-    #ifdef USE_COMMAND_STYLE
-        runCommandLoop();
-    #endif
-    
-    #ifdef USE_MENU_STYLE
-        runMenuLoop();
-    #endif
-    
-    // Auto-save on exit (optional - uncomment if desired)
-    // saveAllData();
-    
+#ifdef USE_COMMAND_MODE
+    runCommandMode();
+#endif
+
+#ifdef USE_MENU_MODE
+    runMenuMode();
+#endif
+
     return 0;
 }

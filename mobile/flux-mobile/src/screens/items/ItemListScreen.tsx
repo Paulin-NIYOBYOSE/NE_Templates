@@ -95,7 +95,17 @@ const ItemListScreen = ({ navigation }: any) => {
           </Text>
           <View style={styles.chipRow}>
             {(item.category as string) ? (
-              <Chip compact textStyle={{ fontSize: 11 }} style={styles.chip}>
+              <Chip
+                compact
+                textStyle={{
+                  fontSize: 11,
+                  color: theme.colors.onPrimaryContainer,
+                }}
+                style={[
+                  styles.chip,
+                  { backgroundColor: theme.colors.primaryContainer },
+                ]}
+              >
                 {String(item.category as string)}
               </Chip>
             ) : null}
@@ -201,7 +211,7 @@ const styles = StyleSheet.create({
   cardContent: { flexDirection: "row", alignItems: "center" },
   cardLeft: { flex: 1 },
   chipRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
-  chip: { height: 24 },
+  chip: { height: 24, borderRadius: 6 },
   cardActions: { flexDirection: "row" },
   fab: { position: "absolute", right: 20, bottom: 20, borderRadius: 16 },
 });

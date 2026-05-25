@@ -6,13 +6,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import {
-  Text,
-  TextInput,
-  Button,
-  Surface,
-  SegmentedButtons,
-} from "react-native-paper";
+import { Text, TextInput, Button, Surface, Chip } from "react-native-paper";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -114,15 +108,33 @@ const ItemFormScreen = ({ navigation, route }: any) => {
               >
                 {field.label}
               </Text>
-              <SegmentedButtons
-                value={value ?? ""}
-                onValueChange={onChange}
-                buttons={field.options!.map((opt) => ({
-                  value: opt,
-                  label: opt,
-                }))}
-                style={styles.segmented}
-              />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipScrollContent}
+              >
+                {field.options!.map((opt) => {
+                  const isSelected = value === opt;
+                  return (
+                    <Chip
+                      key={opt}
+                      selected={isSelected}
+                      onPress={() => onChange(opt)}
+                      style={[
+                        styles.selectChip,
+                        isSelected && { backgroundColor: theme.colors.primary },
+                      ]}
+                      textStyle={[
+                        styles.selectChipText,
+                        isSelected && { color: "#FFFFFF" },
+                      ]}
+                      showSelectedCheck={false}
+                    >
+                      {opt}
+                    </Chip>
+                  );
+                })}
+              </ScrollView>
               {errors[field.name] && (
                 <Text style={styles.errorText}>
                   {(errors[field.name] as any)?.message}
@@ -220,7 +232,9 @@ const styles = StyleSheet.create({
   fieldContainer: { marginBottom: 12 },
   fieldLabel: { marginBottom: 8 },
   input: { marginBottom: 2 },
-  segmented: { marginBottom: 2 },
+  chipScrollContent: { gap: 8, paddingVertical: 4 },
+  selectChip: { borderRadius: 20 },
+  selectChipText: { fontSize: 14 },
   errorText: { color: "#EF4444", fontSize: 12, marginTop: 2, marginLeft: 4 },
   button: { marginTop: 20, borderRadius: 12 },
   buttonContent: { paddingVertical: 6 },

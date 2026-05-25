@@ -19,7 +19,7 @@ export interface ColumnDef {
 const appConfig = {
   // ── Branding ────────────────────────────────────────────────
   appName: 'Exam Template',
-  appSubtitle: 'Generic TVET Exam System',
+  appSubtitle: 'Generic NE Exam System',
 
   // ── Entity (RENAME this per exam) ───────────────────────────
   entity: {

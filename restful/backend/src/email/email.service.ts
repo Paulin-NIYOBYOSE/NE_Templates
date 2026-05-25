@@ -32,7 +32,7 @@ export class EmailService {
   async sendEmail(options: EmailOptions): Promise<void> {
     try {
       const info = await this.transporter.sendMail({
-        from: process.env.SMTP_FROM || '"TVET Exam App" <noreply@tvet.com>',
+        from: process.env.SMTP_FROM || '"NE Exam App" <noreply@exam.com>',
         to: options.to,
         subject: options.subject,
         text: options.text,
@@ -49,7 +49,7 @@ export class EmailService {
   async sendWelcomeEmail(email: string, name: string): Promise<void> {
     await this.sendEmail({
       to: email,
-      subject: 'Welcome to TVET Exam App',
+      subject: 'Welcome to NE Exam App',
       html: `
         <h1>Welcome ${name}!</h1>
         <p>Your account has been successfully created.</p>

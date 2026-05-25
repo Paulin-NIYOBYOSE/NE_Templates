@@ -1,6 +1,6 @@
 # FluxMobile
 
-A production-ready React Native + Expo template for TVET practical exams. Generic and configurable — adapt to any scenario (expense tracker, token generator, booking system) by editing one config file.
+A production-ready React Native + Expo template for National Examinations practical exams. Generic and configurable — adapt to any scenario (expense tracker, token generator, booking system) by editing one config file.
 
 ## Quick Start
 
@@ -16,14 +16,14 @@ Scan QR with **Expo Go** (iOS/Android) or press `i` for iOS simulator / `a` for 
 
 Edit `src/config/appConfig.ts`:
 
-| Field | What to Change |
-|-------|----------------|
-| `appName` | Your app name |
-| `apiBaseUrl` | Your backend URL or MockAPI |
-| `entityName` | Change "Expense" to "Token", "Booking", etc. |
-| `entityFields` | Define form fields for your entity |
+| Field          | What to Change                                   |
+| -------------- | ------------------------------------------------ |
+| `appName`      | Your app name                                    |
+| `apiBaseUrl`   | Your backend URL or MockAPI                      |
+| `entityName`   | Change "Expense" to "Token", "Booking", etc.     |
+| `entityFields` | Define form fields for your entity               |
 | `generateRule` | Business logic (e.g., amount → days calculation) |
-| `validation` | Input constraints |
+| `validation`   | Input constraints                                |
 
 ### Example: Prepaid Token System
 

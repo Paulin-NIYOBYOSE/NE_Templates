@@ -1,6 +1,6 @@
 # Java OOP + Spring Boot + React — Exam Template
 
-Generic template for TVET practical exams. Works for any scenario: shopping, parking, equipment rental, laptop assignment — just rename entities and go.
+Generic template for National Examinations practical exams. Works for any scenario: shopping, parking, equipment rental, laptop assignment — just rename entities and go.
 
 **Stack:** Spring Boot 3.2 | React 18 + TS + Vite | MySQL/PostgreSQL | JWT | Swagger
 

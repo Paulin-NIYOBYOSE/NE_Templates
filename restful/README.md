@@ -1,6 +1,6 @@
 # RESTful API & Web App Template
 
-Full-stack template for TVET exams: NestJS + Next.js + PostgreSQL + JWT + Swagger
+Full-stack template for National Examinations: NestJS + Next.js + PostgreSQL + JWT + Swagger
 
 ## Stack
 
@@ -14,7 +14,7 @@ Full-stack template for TVET exams: NestJS + Next.js + PostgreSQL + JWT + Swagge
 ### 1. Database
 
 ```bash
-psql -U postgres -c "CREATE DATABASE tvet_exam_db;"
+psql -U postgres -c "CREATE DATABASE ne_exam_db;"
 ```
 
 ### 2. Backend

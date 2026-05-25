@@ -1,6 +1,6 @@
 # Backend - NestJS API
 
-This is the backend API for the TVET exam template, built with NestJS, Prisma, and PostgreSQL.
+This is the backend API for the NE exam template, built with NestJS, Prisma, and PostgreSQL.
 
 ## Setup
 

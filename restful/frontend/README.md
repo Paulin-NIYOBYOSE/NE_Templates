@@ -1,6 +1,6 @@
 # Frontend - Next.js App
 
-This is the frontend application for the TVET exam template, built with Next.js 14, TypeScript, and TailwindCSS.
+This is the frontend application for the NE exam template, built with Next.js 14, TypeScript, and TailwindCSS.
 
 ## Setup
 

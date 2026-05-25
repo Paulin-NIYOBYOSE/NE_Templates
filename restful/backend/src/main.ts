@@ -40,9 +40,9 @@ async function bootstrap() {
 
   // Swagger documentation
   const config = new DocumentBuilder()
-    .setTitle('TVET Exam API')
+    .setTitle('NE Exam API')
     .setDescription(
-      'RESTful API template for TVET practical exams. This API provides authentication, CRUD operations, pagination, and role-based access control.',
+      'RESTful API template for National Examinations practical exams. This API provides authentication, CRUD operations, pagination, and role-based access control.',
     )
     .setVersion('1.0')
     .addBearerAuth(

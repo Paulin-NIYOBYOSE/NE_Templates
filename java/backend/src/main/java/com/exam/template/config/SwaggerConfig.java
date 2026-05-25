@@ -23,7 +23,7 @@ public class SwaggerConfig {
                 .info(new Info()
                         .title("Exam Template API")
                         .version("1.0")
-                        .description("Generic TVET Exam Template – Rename entities and endpoints to match your exam scenario."))
+                        .description("Generic NE Exam Template – Rename entities and endpoints to match your exam scenario."))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,

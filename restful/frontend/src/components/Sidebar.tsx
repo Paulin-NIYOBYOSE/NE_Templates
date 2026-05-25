@@ -57,7 +57,7 @@ export default function Sidebar() {
       <div className="flex-shrink-0 p-6 border-b border-gray-200">
         <Link href="/dashboard" className="flex items-center gap-2">
           <span className="text-2xl">🎓</span>
-          <span className="text-xl font-bold text-gray-900">TVET Exam</span>
+          <span className="text-xl font-bold text-gray-900">NE Exam</span>
         </Link>
       </div>
 

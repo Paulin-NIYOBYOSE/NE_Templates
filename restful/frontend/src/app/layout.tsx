@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TVET Exam Template",
-  description: "RESTful API & Web App Template for TVET Exams",
+  title: "NE Exam Template",
+  description: "RESTful API & Web App Template for National Examinations",
 };
 
 export default function RootLayout({

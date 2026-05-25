@@ -1,16 +1,16 @@
 # NE Templates
 
-Production-ready templates for Rwanda TVET practical exams.
+Production-ready templates for National Examinations practical exams.
 
 ## Templates
 
-| Template                                             | Stack                                  | Status    |
-| ---------------------------------------------------- | -------------------------------------- | --------- |
-| [**restful/**](./restful/)                           | NestJS + Next.js + PostgreSQL          | ✅ Ready  |
-| [**java/**](./java/)                                 | Spring Boot + React + MySQL/PostgreSQL | ✅ Ready  |
-| [**mobile/**](./mobile/flux-mobile/)                 | Expo + React Native + TypeScript       | ✅ Ready  |
-| [**intelligent_robotics/**](./intelligent_robotics/) | Python + ArcFace                       | ✅ Ready  |
-| **dsa/**                                             | Data Structures & Algorithms           | 🚧 Coming |
+| Template                                             | Stack                                  | Status   |
+| ---------------------------------------------------- | -------------------------------------- | -------- |
+| [**restful/**](./restful/)                           | NestJS + Next.js + PostgreSQL          | ✅ Ready |
+| [**java/**](./java/)                                 | Spring Boot + React + MySQL/PostgreSQL | ✅ Ready |
+| [**mobile/**](./mobile/flux-mobile/)                 | Expo + React Native + TypeScript       | ✅ Ready |
+| [**intelligent_robotics/**](./intelligent_robotics/) | Python + ArcFace                       | ✅ Ready |
+| **dsa/**                                             | Data Structures & Algorithms           | ✅ Ready |
 
 ## Quick Start
 

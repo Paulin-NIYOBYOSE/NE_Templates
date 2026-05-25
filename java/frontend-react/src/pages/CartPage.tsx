@@ -1,115 +1,97 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import { checkout } from '../api/transactionApi';
+import { checkout, sendConfirmationEmail } from '../api/transactionApi';
+import appConfig from '../config/appConfig';
 
-/**
- * Cart page – frontend-only state, no business logic.
- * RENAME: "Cart" → "Bookings", "Assignments", etc.
- */
 const CartPage: React.FC = () => {
-  const { items, removeFromCart, updateQuantity, clearCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { items, removeFromCart, updateQty, clearCart, grandTotal } = useCart();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
+
+  const fmt = (n: number) =>
+    `${appConfig.currency}${n.toLocaleString(appConfig.locale, { minimumFractionDigits: 2 })}`;
 
   const handleCheckout = async () => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
+    if (items.length === 0) return;
     setLoading(true);
-    setError('');
-    setSuccess('');
     try {
-      const checkoutItems = items.map((i) => ({
-        productCode: i.product.code,
-        quantity: i.quantity,
-      }));
-      await checkout(checkoutItems);
+      const payload = items.map((i) => ({ productCode: i.entity.code, quantity: i.quantity }));
+      await checkout(payload);
+      if (appConfig.features.emailAfterCheckout) {
+        try { await sendConfirmationEmail({ items: payload, total: grandTotal }); } catch { /* silent */ }
+      }
       clearCart();
-      setSuccess('Checkout successful! Your transaction has been recorded.');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Checkout failed');
-    } finally {
-      setLoading(false);
-    }
+      toast.success('Checkout successful! 🎉');
+      navigate('/report');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? 'Checkout failed');
+    } finally { setLoading(false); }
   };
 
-  if (items.length === 0 && !success) {
-    return (
-      <div className="container">
-        <h2>Cart</h2>
-        <div className="empty-state"><p>Your cart is empty.</p></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container">
-      <div className="page-header">
-        <h2>Cart</h2>
-      </div>
+    <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+        🛒 {appConfig.labels.cartTitle}
+      </h1>
 
-      {success && <p className="success-msg">{success}</p>}
-      {error && <p className="error-msg">{error}</p>}
-
-      {items.length > 0 && (
-        <>
-          <table className="cart-table">
-            <thead>
-              <tr>
-                {/* RENAME: column headers to match exam */}
-                <th>Code</th>
-                <th>Name</th>
-                <th>Unit Price</th>
-                <th>Quantity</th>
-                <th>Subtotal</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.product.code}>
-                  <td>{item.product.code}</td>
-                  <td>{item.product.name}</td>
-                  <td>${item.product.price.toFixed(2)}</td>
-                  <td>
-                    <input
-                      type="number"
-                      className="quantity-input"
-                      min={1}
-                      value={item.quantity}
-                      onChange={(e) => updateQuantity(item.product.code, parseInt(e.target.value) || 1)}
-                    />
-                  </td>
-                  <td>${(item.product.price * item.quantity).toFixed(2)}</td>
-                  <td>
-                    <button className="btn btn-danger btn-sm" onClick={() => removeFromCart(item.product.code)}>
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div className="cart-total">
-            Grand Total: ${items.reduce((sum, i) => sum + i.product.price * i.quantity, 0).toFixed(2)}
+      {items.length === 0 ? (
+        <div className="text-center py-20">
+          <p className="text-6xl mb-4">🛒</p>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">Your cart is empty.</p>
+          <button onClick={() => navigate('/')} className="mt-4 px-5 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-medium transition text-sm">
+            Browse {appConfig.entity.plural}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Items */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            {items.map((item, idx) => (
+              <div key={item.entity.code}
+                className={`flex items-center gap-4 px-5 py-4 ${idx < items.length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 dark:text-white truncate">{item.entity.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{item.entity.code} · {fmt(item.entity.price)} each</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => updateQty(item.entity.code, item.quantity - 1)}
+                    className="h-7 w-7 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 font-bold transition flex items-center justify-center text-lg leading-none">−</button>
+                  <span className="w-8 text-center font-semibold text-gray-800 dark:text-gray-200 text-sm">{item.quantity}</span>
+                  <button onClick={() => updateQty(item.entity.code, item.quantity + 1)}
+                    className="h-7 w-7 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 font-bold transition flex items-center justify-center text-lg leading-none">+</button>
+                </div>
+                <p className="w-24 text-right font-bold text-primary-600 dark:text-primary-400 text-sm">
+                  {fmt(item.entity.price * item.quantity)}
+                </p>
+                <button onClick={() => removeFromCart(item.entity.code)}
+                  className="text-red-400 hover:text-red-600 transition ml-1 text-lg">✕</button>
+              </div>
+            ))}
           </div>
 
-          <div className="cart-actions">
-            <button className="btn btn-danger" onClick={clearCart}>Clear Cart</button>
-            <button className="btn btn-success" onClick={handleCheckout} disabled={loading}>
-              {loading ? 'Processing...' : 'Checkout'}
-            </button>
+          {/* Summary */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Grand Total</span>
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">{fmt(grandTotal)}</span>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { clearCart(); toast('Cart cleared'); }}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition">
+                Clear Cart
+              </button>
+              <button onClick={handleCheckout} disabled={loading}
+                className="flex-1 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-semibold text-sm transition">
+                {loading ? 'Processing…' : appConfig.labels.checkoutBtn}
+              </button>
+            </div>
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </main>
   );
 };
 

@@ -7,12 +7,7 @@ export interface SignupData {
   lastName: string;
   phone?: string;
 }
-
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
+export interface LoginData { email: string; password: string }
 export interface AuthResponse {
   token: string;
   type: string;
@@ -20,9 +15,8 @@ export interface AuthResponse {
   fullName: string;
   role: string;
 }
+export interface ChangePasswordData { currentPassword: string; newPassword: string }
 
-export const signup = (data: SignupData) =>
-  api.post<AuthResponse>('/auth/signup', data);
-
-export const login = (data: LoginData) =>
-  api.post<AuthResponse>('/auth/login', data);
+export const signup        = (d: SignupData)        => api.post<AuthResponse>('/auth/signup', d);
+export const login         = (d: LoginData)         => api.post<AuthResponse>('/auth/login', d);
+export const changePassword = (d: ChangePasswordData) => api.put('/auth/change-password', d);

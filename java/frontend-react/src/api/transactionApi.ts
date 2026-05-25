@@ -1,10 +1,8 @@
 import api from './axiosInstance';
-import { PageResponse } from './productApi';
+import appConfig from '../config/appConfig';
+import { PageResponse } from './entityApi';
 
-export interface CheckoutItem {
-  productCode: string;
-  quantity: number;
-}
+export interface CheckoutItem { productCode: string; quantity: number }
 
 export interface TransactionReport {
   transactionId: number;
@@ -19,16 +17,14 @@ export interface TransactionReport {
 }
 
 export const checkout = (items: CheckoutItem[]) =>
-  api.post('/transactions/checkout', { items });
+  api.post(appConfig.api.checkout, { items });
 
-export const getReport = (
-  page = 0,
-  size = 10,
-  startDate?: string,
-  endDate?: string
-) => {
-  let url = `/transactions/report?page=${page}&size=${size}&sort=id,desc`;
-  if (startDate) url += `&startDate=${startDate}`;
-  if (endDate) url += `&endDate=${endDate}`;
+export const getReport = (page = 0, size = 10, startDate?: string, endDate?: string) => {
+  let url = `${appConfig.api.report}?page=${page}&size=${size}&sort=id,desc`;
+  if (startDate) url += `&startDate=${startDate}T00:00:00`;
+  if (endDate)   url += `&endDate=${endDate}T23:59:59`;
   return api.get<PageResponse<TransactionReport>>(url);
 };
+
+export const sendConfirmationEmail = (payload: object) =>
+  api.post(appConfig.api.emailSend, payload);

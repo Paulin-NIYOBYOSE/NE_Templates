@@ -26,18 +26,24 @@
 using namespace std;
 
 // ===========================================================================
-// ITEM STRUCT - Modify fields here for custom scenarios
+// ITEM STRUCT - Modify for custom scenarios
+// ===========================================================================
+// TO ADD A CUSTOM FIELD:
+//   1. Add field here (e.g., string category;)
+//   2. Add to constructors
+//   3. Update addItem(), displayItem(), saveItems(), loadItems()
 // ===========================================================================
 struct Item {
-    int id;
-    string name;
+    int id;                    // Required: unique identifier
+    string name;               // Required: main text field
 #if HAS_QUANTITY
-    int quantity;
+    int quantity;              // Optional: numeric value (score, population, etc.)
 #endif
 #if HAS_DATE
-    string date;
+    string date;               // Optional: date string (YYYY-MM-DD)
 #endif
     
+    // Default constructor
     Item() : id(0), name("") {
 #if HAS_QUANTITY
         quantity = 0;
@@ -47,6 +53,7 @@ struct Item {
 #endif
     }
     
+    // Parameterized constructor
     Item(int _id, const string& _name, int _qty = 0, const string& _date = "")
         : id(_id), name(_name) {
 #if HAS_QUANTITY
@@ -55,22 +62,24 @@ struct Item {
 #if HAS_DATE
         date = _date;
 #endif
-        (void)_qty; (void)_date; // Suppress unused warnings
+        (void)_qty; (void)_date;
     }
 };
 
 // ===========================================================================
-// GLOBAL DATA
+// GLOBAL DATA - Main storage (no need to modify)
 // ===========================================================================
-vector<Item> items;
+vector<Item> items;                              // Dynamic array of entities
 #if ENABLE_GRAPH
-int adjMatrix[MAX_ENTITIES][MAX_ENTITIES];
-int weightMatrix[MAX_ENTITIES][MAX_ENTITIES];
+int adjMatrix[MAX_ENTITIES][MAX_ENTITIES];       // Adjacency matrix (0/1)
+int weightMatrix[MAX_ENTITIES][MAX_ENTITIES];    // Weight/cost matrix
 #endif
 
 // ===========================================================================
-// UTILITY FUNCTIONS
+// UTILITY FUNCTIONS - Generic helpers (no need to modify)
 // ===========================================================================
+
+// Convert string to lowercase for case-insensitive comparison
 string toLower(const string& s) {
     string r = s;
     transform(r.begin(), r.end(), r.begin(), ::tolower);
@@ -101,8 +110,10 @@ void clearInput() {
 void printLine(int w = 60) { cout << string(w, '-') << endl; }
 
 // ===========================================================================
-// VALIDATION
+// VALIDATION - Modify rules in config.h (MIN_ID, MAX_ID, etc.)
 // ===========================================================================
+
+// Validate date format YYYY-MM-DD
 bool isValidDate(const string& d) {
     if (d.length() != 10 || d[4] != '-' || d[7] != '-') return false;
     string y = d.substr(0,4), m = d.substr(5,2), day = d.substr(8,2);
@@ -165,7 +176,7 @@ int findByName(const string& n) {
 }
 
 // ===========================================================================
-// SORTING
+// SORTING - Comparators for std::sort (modify if adding custom fields)
 // ===========================================================================
 bool cmpId(const Item& a, const Item& b) { return SORT_ASCENDING ? a.id < b.id : a.id > b.id; }
 bool cmpName(const Item& a, const Item& b) { return SORT_ASCENDING ? toLower(a.name) < toLower(b.name) : toLower(a.name) > toLower(b.name); }
@@ -191,8 +202,10 @@ void sortItems(int field = DEFAULT_SORT_FIELD, bool silent = false) {
 }
 
 // ===========================================================================
-// DISPLAY
+// DISPLAY - Update if adding custom fields to Item struct
 // ===========================================================================
+
+// Print table header row
 void displayHeader() {
     printLine();
     cout << left << setw(COL_ID) << FIELD_ID << setw(COL_NAME) << FIELD_NAME;
@@ -229,8 +242,10 @@ void listItems() {
 }
 
 // ===========================================================================
-// CRUD OPERATIONS
+// CRUD OPERATIONS - Core functionality (update if adding custom fields)
 // ===========================================================================
+
+// Add new entity with validation
 bool addItem(int id, const string& name, int qty = 0, const string& date = "") {
     if (!validateId(id)) return false;
     if (!validateName(name)) return false;
@@ -391,10 +406,11 @@ void deleteInteractive() {
 }
 
 // ===========================================================================
-// GRAPH FUNCTIONS
+// GRAPH FUNCTIONS - Adjacency matrix operations (disable with ENABLE_GRAPH=false)
 // ===========================================================================
 #if ENABLE_GRAPH
 
+// Initialize matrices to default values
 void initGraph() {
     for (int i = 0; i < MAX_ENTITIES; i++)
         for (int j = 0; j < MAX_ENTITIES; j++) {
@@ -502,8 +518,10 @@ void listConnections(int id) {
 #endif // ENABLE_GRAPH
 
 // ===========================================================================
-// FILE I/O
+// FILE I/O - Update if adding custom fields to Item struct
 // ===========================================================================
+
+// Save entities to CSV file
 bool saveItems(const string& fn = FILE_ITEMS) {
     ofstream f(fn);
     if (!f) { cerr << "Error: Cannot write " << fn << endl; return false; }
@@ -663,16 +681,19 @@ void loadAll() {
 }
 
 // ===========================================================================
-// SEED DATA (for testing)
+// SEED DATA - Sample data for testing (enable with SEED_ON_START=true)
 // ===========================================================================
+// Modify this function to add scenario-specific test data
 void seedData() {
 #if SEED_ON_START
     if (!items.empty()) return;
     cout << "Seeding sample data..." << endl;
+    // Add sample entities - modify for your scenario
     addItem(1, "Alpha", 100, "2024-01-15");
     addItem(2, "Beta", 200, "2024-02-20");
     addItem(3, "Gamma", 150, "2024-03-10");
 #if ENABLE_GRAPH
+    // Add sample connections
     addConnection(1, 2);
     addConnection(2, 3);
     setWeight(1, 2, 10);
@@ -682,7 +703,7 @@ void seedData() {
 }
 
 // ===========================================================================
-// HELP
+// HELP - Command list (auto-generated from config)
 // ===========================================================================
 #ifdef USE_COMMAND_MODE
 void showHelp() {
@@ -709,9 +730,11 @@ void showHelp() {
 #endif
 
 // ===========================================================================
-// COMMAND MODE
+// COMMAND MODE - Text-based command interface (no need to modify)
 // ===========================================================================
 #ifdef USE_COMMAND_MODE
+
+// Parse and execute user command
 bool processCommand(const string& input) {
     string cmd = toLower(trim(input));
     if (cmd.empty()) return true;
@@ -774,9 +797,11 @@ void runCommandMode() {
 #endif
 
 // ===========================================================================
-// MENU MODE
+// MENU MODE - Numbered menu interface (no need to modify)
 // ===========================================================================
 #ifdef USE_MENU_MODE
+
+// Display main menu
 void showMenu() {
     cout << "\n========================================" << endl;
     cout << "  " << ENTITY_SINGULAR << " Management System" << endl;
@@ -845,21 +870,21 @@ void runMenuMode() {
 #endif
 
 // ===========================================================================
-// MAIN
+// MAIN - Entry point (no need to modify)
 // ===========================================================================
 int main() {
 #if ENABLE_GRAPH
-    initGraph();
+    initGraph();           // Initialize adjacency matrices
 #endif
-    loadAll();
-    seedData();
+    loadAll();             // Load data from files (if exist)
+    seedData();            // Add sample data (if SEED_ON_START=true)
     
 #ifdef USE_COMMAND_MODE
-    runCommandMode();
+    runCommandMode();      // Start command-line interface
 #endif
 
 #ifdef USE_MENU_MODE
-    runMenuMode();
+    runMenuMode();         // Start menu interface
 #endif
 
     return 0;

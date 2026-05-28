@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import api from "@/lib/api";
 import { CreateItemDto } from "@/types/item";
+import { useToast } from "@/hooks/useToast";
 
 export default function NewItemPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -20,16 +21,16 @@ export default function NewItemPage() {
   const onSubmit = async (data: CreateItemDto) => {
     try {
       setLoading(true);
-      setError("");
       const payload = {
         ...data,
         quantity: Number(data.quantity),
         price: Number(data.price),
       };
       await api.post("/items", payload);
+      toast.success("Item created successfully");
       router.push("/items");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to create item");
+      toast.error(err.response?.data?.message || "Failed to create item");
     } finally {
       setLoading(false);
     }
@@ -43,12 +44,6 @@ export default function NewItemPage() {
 
       <div className="card max-w-2xl">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
           <div>
             <label
               htmlFor="name"

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import { useToast } from "@/hooks/useToast";
 
 interface CategoryReport {
   category: string;
@@ -34,6 +35,7 @@ export default function ReportsPage() {
   const [topItems, setTopItems] = useState<TopItem[]>([]);
   const [lowStock, setLowStock] = useState<LowStockItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
 
   useEffect(() => {
     fetchReports();
@@ -50,7 +52,7 @@ export default function ReportsPage() {
       setTopItems(topRes.data);
       setLowStock(lowRes.data);
     } catch (error) {
-      console.error("Failed to fetch reports:", error);
+      toast.error("Failed to load reports");
     } finally {
       setLoading(false);
     }
@@ -71,8 +73,7 @@ export default function ReportsPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error("Failed to export:", error);
-      alert("Failed to export CSV");
+      toast.error("Failed to export CSV");
     }
   };
 
@@ -123,8 +124,12 @@ export default function ReportsPage() {
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
                     {cat.category}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{cat.count}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{cat.totalStock}</td>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    {cat.count}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    {cat.totalStock}
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
                     {formatCurrency(cat.averagePrice)}
                   </td>
@@ -153,7 +158,9 @@ export default function ReportsPage() {
                     {index + 1}
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {item.name}
+                    </p>
                     <p className="text-xs text-gray-500">{item.category}</p>
                   </div>
                 </div>
@@ -183,7 +190,9 @@ export default function ReportsPage() {
                 className="flex items-center justify-between p-3 bg-red-50 rounded-lg"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {item.name}
+                  </p>
                   <p className="text-xs text-gray-500">{item.category}</p>
                 </div>
                 <div className="text-right">

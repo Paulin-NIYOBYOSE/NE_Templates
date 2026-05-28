@@ -6,10 +6,11 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { authService } from "@/lib/auth";
 import { SignupData } from "@/types/auth";
+import { useToast } from "@/hooks/useToast";
 
 export default function SignupPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -21,11 +22,11 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupData) => {
     try {
       setLoading(true);
-      setError("");
       await authService.signup(data);
+      toast.success("Account created successfully!");
       router.push("/dashboard");
     } catch (err: any) {
-      setError(
+      toast.error(
         err.response?.data?.message || "Signup failed. Please try again.",
       );
     } finally {
@@ -42,12 +43,6 @@ export default function SignupPage() {
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>

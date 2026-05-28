@@ -6,6 +6,7 @@ import { User } from "@/types/auth";
 import StatCard from "@/components/StatCard";
 import Link from "next/link";
 import api from "@/lib/api";
+import { useToast } from "@/hooks/useToast";
 
 interface DashboardData {
   overview: {
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
 
   useEffect(() => {
     setUser(authService.getCurrentUser());
@@ -45,7 +47,7 @@ export default function DashboardPage() {
       const response = await api.get<DashboardData>("/reports/dashboard");
       setDashboard(response.data);
     } catch (error) {
-      console.error("Failed to fetch dashboard:", error);
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }

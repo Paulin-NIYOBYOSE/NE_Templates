@@ -6,10 +6,11 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { authService } from "@/lib/auth";
 import { LoginCredentials } from "@/types/auth";
+import { useToast } from "@/hooks/useToast";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -21,11 +22,11 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginCredentials) => {
     try {
       setLoading(true);
-      setError("");
       await authService.login(data);
+      toast.success("Welcome back!");
       router.push("/dashboard");
     } catch (err: any) {
-      setError(
+      toast.error(
         err.response?.data?.message || "Login failed. Please try again.",
       );
     } finally {
@@ -45,12 +46,6 @@ export default function LoginPage() {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
           <div className="rounded-md shadow-sm space-y-4">
             <div>
               <label

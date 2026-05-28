@@ -3,15 +3,18 @@
 import { authService } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { User } from "@/types/auth";
+import { useToast } from "@/hooks/useToast";
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
+  const toast = useToast();
 
   useEffect(() => {
     setUser(authService.getCurrentUser());
   }, []);
 
   const handleLogout = () => {
+    toast.info("You have been logged out");
     authService.logout();
   };
 

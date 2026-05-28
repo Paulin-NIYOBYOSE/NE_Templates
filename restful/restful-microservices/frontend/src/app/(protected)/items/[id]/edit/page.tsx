@@ -5,13 +5,14 @@ import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import api from "@/lib/api";
 import { Item, UpdateItemDto } from "@/types/item";
+import { useToast } from "@/hooks/useToast";
 
 export default function EditItemPage() {
   const router = useRouter();
   const params = useParams();
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingItem, setFetchingItem] = useState(true);
+  const toast = useToast();
 
   const {
     register,
@@ -30,8 +31,7 @@ export default function EditItemPage() {
       const response = await api.get<Item>(`/items/${params.id}`);
       reset(response.data);
     } catch (error) {
-      console.error("Failed to fetch item:", error);
-      setError("Failed to load item");
+      toast.error("Failed to load item");
     } finally {
       setFetchingItem(false);
     }
@@ -40,7 +40,6 @@ export default function EditItemPage() {
   const onSubmit = async (data: UpdateItemDto) => {
     try {
       setLoading(true);
-      setError("");
       const payload = {
         ...data,
         quantity:
@@ -48,9 +47,10 @@ export default function EditItemPage() {
         price: data.price !== undefined ? Number(data.price) : undefined,
       };
       await api.put(`/items/${params.id}`, payload);
+      toast.success("Item updated successfully");
       router.push(`/items/${params.id}`);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to update item");
+      toast.error(err.response?.data?.message || "Failed to update item");
     } finally {
       setLoading(false);
     }
@@ -72,12 +72,6 @@ export default function EditItemPage() {
 
       <div className="card max-w-2xl">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
           <div>
             <label
               htmlFor="name"

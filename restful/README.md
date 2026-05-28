@@ -207,6 +207,46 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
+## UI Notification System
+
+The frontend includes a built-in toast notification and confirmation modal system.
+
+### Toast Notifications
+
+```typescript
+import { useToast } from "@/hooks/useToast";
+
+const toast = useToast();
+
+toast.success("Item created successfully");
+toast.error("Failed to delete item");
+toast.warning("You cannot delete your own account");
+toast.info("You have been logged out");
+```
+
+Toasts auto-dismiss after 4 seconds and stack in the top-right corner with a slide-in animation.
+
+### Confirmation Modals
+
+```typescript
+import { useConfirmModal } from "@/components/ConfirmModal";
+
+const { confirm, ModalComponent } = useConfirmModal();
+
+const handleDelete = async () => {
+  const confirmed = await confirm({
+    title: "Delete Item",
+    message: "Are you sure? This action cannot be undone.",
+    confirmText: "Delete",
+    variant: "danger", // danger | warning | primary
+  });
+  if (!confirmed) return;
+  // proceed with delete
+};
+```
+
+**Remember to render `{ModalComponent}` in your page JSX.**
+
 ## Features
 
 ✅ JWT authentication with refresh tokens  
@@ -217,7 +257,8 @@ npm install
 ✅ Security (Helmet, CORS, rate limiting)  
 ✅ Responsive UI with fixed sidebar/navbar  
 ✅ Database migrations and seeding  
-✅ Error handling and filters
+✅ Error handling and filters  
+✅ Toast notifications and confirmation modals
 
 ---
 

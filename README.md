@@ -4,21 +4,21 @@ Production-ready templates for National Examinations practical exams.
 
 ## Templates
 
-| Template                                             | Stack                                  | Status   |
-| ---------------------------------------------------- | -------------------------------------- | -------- |
-| [**restful/**](./restful/)                           | NestJS + Next.js + PostgreSQL          | ✅ Ready |
-| [**java/**](./java/)                                 | Spring Boot + React + MySQL/PostgreSQL | ✅ Ready |
-| [**mobile/**](./mobile/flux-mobile/)                 | Expo + React Native + TypeScript       | ✅ Ready |
-| [**intelligent_robotics/**](./intelligent_robotics/) | Python + ArcFace                       | ✅ Ready |
-| **dsa/**                                             | Data Structures & Algorithms           | ✅ Ready |
+| Template                                             | Stack                                          | Status   |
+| ---------------------------------------------------- | ---------------------------------------------- | -------- |
+| [**restful/**](./restful/)                           | NestJS + Next.js + PostgreSQL + Toast/Modal UI | ✅ Ready |
+| [**java/**](./java/)                                 | Spring Boot + React + MySQL/PostgreSQL         | ✅ Ready |
+| [**mobile/**](./mobile/flux-mobile/)                 | Expo + React Native + TypeScript               | ✅ Ready |
+| [**intelligent_robotics/**](./intelligent_robotics/) | Python + ArcFace                               | ✅ Ready |
+| **dsa/**                                             | Data Structures & Algorithms                   | ✅ Ready |
 
 ## Quick Start
 
-### RESTful (NestJS + Next.js)
+### RESTful Monolithic (NestJS + Next.js)
 
 ```bash
-cd restful/backend && npm i && cp .env.example .env && npm run start:dev
-cd restful/frontend && npm i && npm run dev
+cd restful/monolithic/backend && npm i && cp .env.example .env && npm run start:dev
+cd restful/monolithic/frontend && npm i && cp .env.local.example .env.local && npm run dev
 ```
 
 → Backend: `localhost:3001` | Frontend: `localhost:3000` | Swagger: `localhost:3001/api/docs`

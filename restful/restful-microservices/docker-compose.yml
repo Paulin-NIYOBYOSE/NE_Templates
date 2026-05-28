@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres-auth:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ne_auth_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+
+  postgres-items:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ne_items_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - items-db-data:/var/lib/postgresql/data
+
+  auth-service:
+    build: ./services/auth-service
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://postgres:postgres@postgres-auth:5432/ne_auth_db?schema=public
+      JWT_SECRET: super-secret-jwt-key-change-me
+      JWT_EXPIRES_IN: 1h
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres-auth
+
+  items-service:
+    build: ./services/items-service
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgresql://postgres:postgres@postgres-items:5432/ne_items_db?schema=public
+      JWT_SECRET: super-secret-jwt-key-change-me
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres-items
+
+  gateway:
+    build: ./gateway
+    environment:
+      PORT: 3000
+      AUTH_SERVICE_URL: http://auth-service:3001
+      ITEMS_SERVICE_URL: http://items-service:3002
+      JWT_SECRET: super-secret-jwt-key-change-me
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - items-service
+
+volumes:
+  auth-db-data:
+  items-db-data:

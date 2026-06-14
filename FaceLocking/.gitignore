@@ -1,0 +1,10 @@
+.venv/
+models/
+*.onnx
+__pycache__/
+*.pyc
+data/history/
+*.npz
+*.pkl
+.env
+.DS_Store
